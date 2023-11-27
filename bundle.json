@@ -1,0 +1,54 @@
+{
+  "name": "@openharmony/sandbox_manager",
+  "description": "SandboxManager",
+  "version": "0.0.0",
+  "license": "Apache License 2.0",
+  "publishAs": "code-segment",
+  "segment": {
+      "destPath": "base/accesscontrol/sandbox_manager"
+  },
+  "dirs": {},
+  "scripts": {},
+  "component": {
+    "name": "sandbox_manager",
+    "subsystem": "accesscontrol",
+    "syscap": [
+    ],
+    "features": [],
+    "adapted_system_type": [ "standard" ],
+    "rom": "10000KB",
+    "ram": "5000KB",
+    "deps": {
+      "components": [
+        "c_utils",
+        "hilog",
+        "ipc",
+        "safwk",
+        "samgr"
+      ],
+      "third_party": [
+        "sqlite"
+      ]
+    },
+    "build": {
+      "group_type":{
+        "service_group": [
+        ]
+      },
+      "inner_kits": [
+        {
+          "name": "//base/accesscontrol/sandbox_manager/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk",
+          "header": {
+            "header_base": "//base/accesscontrol/sandbox_manager/interfaces/innerkits/sandbox_manager/include",
+            "header_files": [
+              "sandbox_manager_kit.h"
+            ]
+          }
+        }
+      ],
+      "test": [
+        "//base/accesscontrol/sandbox_manager:sandbox_manager_build_module_test"
+      ]
+    }
+  }
+}
