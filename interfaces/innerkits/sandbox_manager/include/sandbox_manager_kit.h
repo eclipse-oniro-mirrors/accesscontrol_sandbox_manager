@@ -37,7 +37,7 @@ class SandboxManagerKit {
 public:
     static int persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
     static int unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag);
     static int startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
     static int stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
     static int checkPersistPermission(

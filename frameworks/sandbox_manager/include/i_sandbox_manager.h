@@ -31,8 +31,7 @@ public:
 
     virtual int persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
     virtual int unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
-    virtual int setPolicy(
-        uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
+    virtual int setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag) = 0;
     virtual int startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
     virtual int stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
     virtual int checkPersistPermission(

@@ -37,11 +37,10 @@ int SandboxManagerKit::unPersistPermission(const std::vector<PolicyInfo> &policy
     return SandboxManagerClient::GetInstance().unPersistPermission(policy, result);
 }
 
-int SandboxManagerKit::setPolicy(
-    uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int SandboxManagerKit::setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
-    return SandboxManagerClient::GetInstance().setPolicy(tokenid, policy, result);
+    return SandboxManagerClient::GetInstance().setPolicy(tokenid, policy, policyFlag);
 }
 
 int SandboxManagerKit::startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)

@@ -52,7 +52,7 @@ int SandboxManagerClient::unPersistPermission(const std::vector<PolicyInfo> &pol
 }
 
 int SandboxManagerClient::setPolicy(
-    uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+    uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "call");
     return 0;
