@@ -12,23 +12,21 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../sandbox_manager.gni")
+import("../../sandbox_manager.gni")
 
-config("sandbox_manager") {
-  visibility = [ ":*" ]
-  include_dirs = [ "include" ]
+ohos_prebuilt_etc("sandbox_manager_service.rc") {
+  source = "sandbox_manager_service.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "accesscontrol"
+  part_name = "sandbox_manager"
 }
 
 if (is_standard_system) {
-  ohos_shared_library("libsandbox_manager_sdk") {
+  ohos_shared_library("sandbox_manager_service") {
     subsystem_name = "accesscontrol"
     part_name = "sandbox_manager"
-    innerapi_tags = [
-      "platformsdk",
-      "sasdk",
-    ]
     if (!use_clang_coverage) {
-      version_script = "libsandbox_manager_sdk.map"
+      version_script = "sandbox_manager_service.map"
     }
 
     sanitize = {
@@ -37,43 +35,43 @@ if (is_standard_system) {
       debug = false
     }
 
-    output_name = "libsandbox_manager_sdk"
-
-    public_configs = [ ":sandbox_manager" ]
-
     include_dirs = [
       "${sandbox_manager_path}/frameworks/sandbox_manager/include",
       "${sandbox_manager_path}/frameworks/common/include",
-      "src",
-      "include",
+      "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
+      "${sandbox_manager_path}/services/common/database/include",
+      "main/cpp/include/service",
+      "main/cpp/include/database",
+      "//base/security/access_token/interfaces/innerkits/accesstoken/include",
     ]
 
     sources = [
-      "src/sandbox_manager_client.cpp",
-      "src/sandbox_manager_death_recipient.cpp",
-      "src/sandbox_manager_kit.cpp",
-      "src/sandbox_manager_load_callback.cpp",
-      "src/sandbox_manager_proxy.cpp",
+      "main/cpp/src/service/sandbox_manager_service.cpp",
+      "main/cpp/src/service/sandbox_manager_stub.cpp",
     ]
+
+    cflags_cc = [ "-DHILOG_ENABLE" ]
+
+    if (build_variant == "user") {
+      cflags_cc += [ "-DATM_BUILD_VARIANT_USER_ENABLE" ]
+    }
 
     deps = [
       "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
       "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
+      "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
+      "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service.rc",
+      "//third_party/sqlite:sqlite",
     ]
 
     external_deps = [
+      "access_token:libaccesstoken_sdk",
       "c_utils:utils",
-      "common_event_service:cesfwk_innerkits",
+      "eventhandler:libeventhandler",
       "hilog:libhilog",
-      "ipc:ipc_single",
+      "ipc:ipc_core",
+      "safwk:system_ability_fwk",
       "samgr:samgr_proxy",
-    ]
-
-    configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
-
-    cflags_cc = [
-      "-DHILOG_ENABLE",
-      "-DDEBUG_API_PERFORMANCE",
     ]
   }
 }

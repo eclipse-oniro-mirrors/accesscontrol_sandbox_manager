@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "policy_info_vector_parcel.h"
+#include <cstdint>
+#include "parcel_utils.h"
+#include "policy_info_parcel.h"
+
+namespace OHOS {
+namespace AccessControl {
+namespace SandboxManager {
+bool PolicyInfoVectorParcel::Marshalling(Parcel &out) const
+{
+    const std::vector<PolicyInfo> policy = this->policyVector;
+    const uint32_t POLICY_VECTOR_SIZE_LIMIT = 500;
+    uint32_t vecSize = policy.size();
+    if (vecSize > POLICY_VECTOR_SIZE_LIMIT) {
+        return false;
+    }
+    RETURN_IF_FALSE(out.WriteUint32(vecSize));
+
+    for (uint32_t i = 0; i < vecSize; i++) {
+        sptr<PolicyInfoParcel> policyInfoParcel = new (std::nothrow) PolicyInfoParcel();
+        if (policyInfoParcel == nullptr) {
+            return false;
+        }
+        policyInfoParcel->policyInfo = policy[i];
+        RELEASE_IF_FALSE(out.WriteParcelable(policyInfoParcel), policyInfoParcel);
+    }
+
+    return true;
+}
+
+PolicyInfoVectorParcel* PolicyInfoVectorParcel::Unmarshalling(Parcel &in)
+{
+    PolicyInfoVectorParcel* policyInfoVectorParcel = new (std::nothrow) PolicyInfoVectorParcel();
+    if (policyInfoVectorParcel == nullptr) {
+        return nullptr;
+    }
+    uint32_t vecSize;
+    const uint32_t POLICY_VECTOR_SIZE_LIMIT = 500;
+    RELEASE_IF_FALSE(in.ReadUint32(vecSize), policyInfoVectorParcel);
+    if (vecSize > POLICY_VECTOR_SIZE_LIMIT) {
+        return nullptr;
+    }
+    for (uint32_t i = 0; i < vecSize; i++) {
+        sptr<PolicyInfoParcel> policyInfoParcel = in.ReadParcelable<PolicyInfoParcel>();
+        if (policyInfoParcel == nullptr) {
+            return nullptr;
+        }
+        policyInfoVectorParcel->policyVector.emplace_back(policyInfoParcel->policyInfo);
+    }
+    return policyInfoVectorParcel;
+}
+} // namespace SandboxManager
+} // namespace AccessControl
+} // namespace OHOS

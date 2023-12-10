@@ -14,13 +14,13 @@
  */
 
 #include "sandbox_manager_kit_test.h"
+
 #include <cstdint>
 #include <vector>
-
 #include "policy_info.h"
 #include "sandbox_manager_client.h"
+#include "sandbox_manager_err_code.h"
 #include "sandbox_manager_kit.h"
-#include "sandbox_manager_log.h"
 
 using namespace testing::ext;
 
@@ -28,43 +28,83 @@ namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
 
-static constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {
-    LOG_CORE, ACCESSCONTROL_DOMAIN_SANDBOXMANAGER, "SandboxManagerKitTest"
-};
-
 void SandboxManagerKitTest::SetUpTestCase()
-{
-}
+{}
 
 void SandboxManagerKitTest::TearDownTestCase()
-{
-}
+{}
 
 void SandboxManagerKitTest::SetUp()
-{
-}
+{}
 
 void SandboxManagerKitTest::TearDown()
-{
-}
+{}
 
-HWTEST_F(SandboxManagerKitTest, SdkTest, TestSize.Level1)
+HWTEST_F(SandboxManagerKitTest, SdkTest001, TestSize.Level1)
 {
-    SANDBOXMANAGER_LOG_DEBUG(LABEL, "call");
     PolicyInfo info;
     std::vector<PolicyInfo> policy;
     policy.push_back(info);
     std::vector<uint32_t> result;
-    ASSERT_EQ(0, SandboxManagerKit::persistPermission(policy, result));
-    ASSERT_EQ(0, SandboxManagerKit::unPersistPermission(policy, result));
-    uint64_t token = 0;
-    ASSERT_EQ(0, SandboxManagerKit::setPolicy(token, policy, result));
-    ASSERT_EQ(0, SandboxManagerKit::startAccessingURI(policy, result));
-    ASSERT_EQ(0, SandboxManagerKit::stopAccessingURI(policy, result));
-    std::vector<bool> tmp;
-    ASSERT_EQ(0, SandboxManagerKit::checkPersistPermission(token, policy, tmp));
+    ASSERT_EQ(PERMISSION_DENIED, SandboxManagerKit::persistPermission(policy, result));
+    ASSERT_NE(policy.size(), result.size());
 }
 
+HWTEST_F(SandboxManagerKitTest, SdkTest002, TestSize.Level1)
+{
+    PolicyInfo info;
+    std::vector<PolicyInfo> policy;
+    policy.push_back(info);
+    std::vector<uint32_t> result;
+    ASSERT_EQ(PERMISSION_DENIED, SandboxManagerKit::unPersistPermission(policy, result));
+    ASSERT_NE(policy.size(), result.size());
+}
+
+HWTEST_F(SandboxManagerKitTest, SdkTest003, TestSize.Level1)
+{
+    PolicyInfo info;
+    std::vector<PolicyInfo> policy;
+    policy.push_back(info);
+    std::vector<uint32_t> result;
+
+    uint64_t token = 0;
+    uint64_t policyFlag = 0b01;
+    ASSERT_EQ(PERMISSION_DENIED, SandboxManagerKit::setPolicy(token, policy, policyFlag));
+}
+
+HWTEST_F(SandboxManagerKitTest, SdkTest004, TestSize.Level1)
+{
+    PolicyInfo info;
+    std::vector<PolicyInfo> policy;
+    policy.push_back(info);
+    std::vector<uint32_t> result;
+
+    ASSERT_EQ(PERMISSION_DENIED, SandboxManagerKit::startAccessingURI(policy, result));
+    ASSERT_NE(policy.size(), result.size());
+}
+
+HWTEST_F(SandboxManagerKitTest, SdkTest005, TestSize.Level1)
+{
+    PolicyInfo info;
+    std::vector<PolicyInfo> policy;
+    policy.push_back(info);
+    std::vector<uint32_t> result;
+
+    ASSERT_EQ(PERMISSION_DENIED, SandboxManagerKit::stopAccessingURI(policy, result));
+    ASSERT_NE(policy.size(), result.size());
+}
+
+HWTEST_F(SandboxManagerKitTest, SdkTest006, TestSize.Level1)
+{
+    PolicyInfo info;
+    std::vector<PolicyInfo> policy;
+    policy.push_back(info);
+    std::vector<bool> result;
+    uint64_t tokenid = 0;
+
+    ASSERT_EQ(SANDBOX_MANAGER_OK, SandboxManagerKit::checkPersistPermission(tokenid, policy, result));
+    ASSERT_EQ(policy.size(), result.size());
+}
 } //SandboxManager
 } //AccessControl
 } // OHOS

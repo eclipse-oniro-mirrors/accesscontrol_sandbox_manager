@@ -13,23 +13,31 @@
  * limitations under the License.
  */
 
-#ifndef POLICY_INFO_H
-#define POLICY_INFO_H
+#ifndef PARCEL_UTILS_H
+#define PARCEL_UTILS_H
 
-#include <string>
-#include <cstdint>
+#define MAX_PERMLIST_SIZE 1024
+#define MAX_DCAP_SIZE 32
+#define MAX_ACL_SIZE 64
+#define MAX_DEVICE_ID_SIZE 1024
+#define MAX_RECORD_SIZE 1024
+#define MAX_ACCESS_RECORD_SIZE 10
 
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
-struct PolicyInfo final {
-public:
-    std::string path;
-    uint64_t mode;
-};
+#define RETURN_IF_FALSE(expr) \
+    if (!(expr)) { \
+        return false; \
+    }
 
+#define RELEASE_IF_FALSE(expr, obj) \
+    if (!(expr)) { \
+        delete (obj); \
+        (obj) = nullptr; \
+        return (obj); \
+    }
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS
-
-#endif // POLICY_INFO_H
+#endif // PARCEL_UTILS_H

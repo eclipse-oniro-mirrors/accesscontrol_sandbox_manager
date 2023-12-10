@@ -46,8 +46,7 @@
 /* define LOG_TAG as "accesscontrol_*" at your submodule, * means your submodule name such as "accesscontrol__dac" */
 #undef LOG_TAG
 #undef LOG_DOMAIN
-// static constexpr unsigned int ACCESSCONTROL_DOMAIN_SANDBOXMANAGER = 0xD005A07;
-static constexpr unsigned int ACCESSCONTROL_DOMAIN_SANDBOXMANAGER = 0xD002F0A;
+static constexpr unsigned int ACCESSCONTROL_DOMAIN_SANDBOXMANAGER = 0xD005A07;
 
 #else
 

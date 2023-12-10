@@ -39,10 +39,18 @@ ohos_shared_library("sandbox_manager_communication_adapter_cxx") {
 
   include_dirs = [
     "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
+    "${sandbox_manager_path}/frameworks/common/include",
     "include",
   ]
 
-  sources = []
+  sources = [
+    "src/policy_info_parcel.cpp",
+    "src/policy_info_vector_parcel.cpp",
+  ]
+
+  dep = [
+    "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
+  ]
 
   external_deps = [ "c_utils:utils" ]
 }

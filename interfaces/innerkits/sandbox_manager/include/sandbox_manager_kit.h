@@ -27,6 +27,7 @@
 #define SANDBOXMANAGER_KIT_H
 
 #include "policy_info.h"
+
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
@@ -35,12 +36,12 @@ namespace SandboxManager {
  */
 class SandboxManagerKit {
 public:
-    static int persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag);
-    static int startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int checkPersistPermission(
+    static int32_t persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag);
+    static int32_t startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t checkPersistPermission(
         uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result);
 };
 } // SandboxManager

@@ -15,12 +15,12 @@
 
 #ifndef I_SANDBOX_MANAGER_H
 #define I_SANDBOX_MANAGER_H
-
+#include <vector>
 #include "errors.h"
 #include "iremote_broker.h"
-#include "system_ability_definition.h"
 #include "policy_info.h"
-#include <vector>
+#include "sandboxmanager_service_ipc_interface_code.h"
+#include "system_ability_definition.h"
 
 namespace OHOS {
 namespace AccessControl {
@@ -29,12 +29,14 @@ class ISandboxManager : public IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.accesscontrol.sandbox_manager.ISandboxManager");
 
-    virtual int persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
-    virtual int unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
-    virtual int setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag) = 0;
-    virtual int startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
-    virtual int stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
-    virtual int checkPersistPermission(
+    static const int SA_ID_SANDBOX_MANAGER_SERVICE = SANDBOX_MANAGER_SERVICE_ID;
+
+    virtual int32_t persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
+    virtual int32_t unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
+    virtual int32_t setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag) = 0;
+    virtual int32_t startAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
+    virtual int32_t stopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) = 0;
+    virtual int32_t checkPersistPermission(
         uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result) = 0;
 };
 } // namespace SandboxManager

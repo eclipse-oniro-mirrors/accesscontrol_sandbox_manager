@@ -11,43 +11,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/test.gni")
-import("../../../../sandbox_manager.gni")
+import("//build/ohos.gni")
+import("../../sandbox_manager.gni")
 
-ohos_unittest("libsandbox_manager_sdk_test") {
+ohos_shared_library("sandbox_manager_service_common") {
   subsystem_name = "accesscontrol"
   part_name = "sandbox_manager"
-  module_out_path = part_name + "/" + part_name
-
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   include_dirs = [
-    "${sandbox_manager_path}/frameworks/sandbox_manager/include",
     "${sandbox_manager_path}/frameworks/common/include",
-    "../include",
-    "../src",
-    "//third_party/googletest/include",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "unittest/include",
+    "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
+    "database/include",
   ]
 
-  sources = [ "unittest/src/sandbox_manager_kit_test.cpp" ]
+  sources = [
+    "database/src/generic_values.cpp",
+    "database/src/sqlite_helper.cpp",
+    "database/src/statement.cpp",
+    "database/src/variant_value.cpp",
+  ]
 
   cflags_cc = [ "-DHILOG_ENABLE" ]
+  configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
   deps = [
     "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
-    "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
-    "../:libsandbox_manager_sdk",
+    "//third_party/sqlite:sqlite",
   ]
 
   external_deps = [
     "c_utils:utils",
-    "dsoftbus:softbus_client",
     "hilog:libhilog",
-    "ipc:ipc_single",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
-}
-
-group("unittest") {
-  testonly = true
-  deps = [ ":libsandbox_manager_sdk_test" ]
 }

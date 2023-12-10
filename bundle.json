@@ -24,7 +24,10 @@
         "hilog",
         "ipc",
         "safwk",
-        "samgr"
+        "samgr",
+        "eventhandler",
+        "common_event_service",
+        "access_token"
       ],
       "third_party": [
         "sqlite"
@@ -33,6 +36,7 @@
     "build": {
       "group_type":{
         "service_group": [
+          "//base/accesscontrol/sandbox_manager/services/sandbox_manager:sandbox_manager_service"
         ]
       },
       "inner_kits": [

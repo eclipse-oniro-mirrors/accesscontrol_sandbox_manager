@@ -13,49 +13,50 @@
  * limitations under the License.
  */
 
+#include "sandbox_manager_kit.h"
 
 #include "sandbox_manager_client.h"
-#include "sandbox_manager_kit.h"
 #include "sandbox_manager_log.h"
 
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
 namespace {
-static constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {LOG_CORE, ACCESSCONTROL_DOMAIN_SANDBOXMANAGER, "SandboxMngKit"};
+static constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {
+    LOG_CORE, ACCESSCONTROL_DOMAIN_SANDBOXMANAGER, "SandboxManagerKit"};
 }
 
-int SandboxManagerKit::persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerKit::persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
     return SandboxManagerClient::GetInstance().persistPermission(policy, result);
 }
 
-int SandboxManagerKit::unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerKit::unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
     return SandboxManagerClient::GetInstance().unPersistPermission(policy, result);
 }
 
-int SandboxManagerKit::setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
+int32_t SandboxManagerKit::setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
     return SandboxManagerClient::GetInstance().setPolicy(tokenid, policy, policyFlag);
 }
 
-int SandboxManagerKit::startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerKit::startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
-    return SandboxManagerClient::GetInstance().startAccessingURI(policy, result);
+    return SandboxManagerClient::GetInstance().startAccessingPolicy(policy, result);
 }
 
-int SandboxManagerKit::stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerKit::stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
-    return SandboxManagerClient::GetInstance().stopAccessingURI(policy, result);
+    return SandboxManagerClient::GetInstance().stopAccessingPolicy(policy, result);
 }
 
-int SandboxManagerKit::checkPersistPermission(
+int32_t SandboxManagerKit::checkPersistPermission(
     uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result)
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
