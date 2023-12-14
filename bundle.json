@@ -36,7 +36,8 @@
     "build": {
       "group_type":{
         "service_group": [
-          "//base/accesscontrol/sandbox_manager/services/sandbox_manager:sandbox_manager_service"
+          "//base/accesscontrol/sandbox_manager/services/sandbox_manager:sandbox_manager_service",
+          "//base/accesscontrol/sandbox_manager/services/sandbox_manager/main/sa_profile:sandbox_manager_sa_profile_standard"
         ]
       },
       "inner_kits": [
