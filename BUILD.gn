@@ -18,6 +18,10 @@ group("sandbox_manager_build_module_test") {
   testonly = true
   deps = []
   if (is_standard_system) {
-    deps += [ "interfaces/innerkits/sandbox_manager/test:unittest" ]
+    deps += [
+      "frameworks/test:unittest",
+      "interfaces/innerkits/sandbox_manager/test:unittest",
+      "services/sandbox_manager/test:unittest",
+    ]
   }
 }

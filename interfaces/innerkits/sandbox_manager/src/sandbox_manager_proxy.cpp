@@ -59,7 +59,7 @@ bool SandboxManagerProxy::SendRequest(SandboxManagerInterfaceCode code,
     return true;
 }
 
-int32_t SandboxManagerProxy::persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerProxy::PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(ISandboxManager::GetDescriptor())) {
@@ -93,7 +93,7 @@ int32_t SandboxManagerProxy::persistPermission(const std::vector<PolicyInfo> &po
     return remoteRet;
 }
 
-int32_t SandboxManagerProxy::unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerProxy::UnPersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(ISandboxManager::GetDescriptor())) {
@@ -127,7 +127,84 @@ int32_t SandboxManagerProxy::unPersistPermission(const std::vector<PolicyInfo> &
     return remoteRet;
 }
 
-int32_t SandboxManagerProxy::setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy,
+int32_t SandboxManagerProxy::PersistPolicyByTokenId(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(ISandboxManager::GetDescriptor())) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write descriptor fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write tokenId fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+
+    PolicyInfoVectorParcel policyInfoVectorParcel;
+    policyInfoVectorParcel.policyVector = policy;
+    if (!data.WriteParcelable(&policyInfoVectorParcel)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write policyInfoVectorParcel fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    
+    MessageParcel reply;
+    if (!SendRequest(SandboxManagerInterfaceCode::PERSIST_PERMISSION_BY_TOKENID, data, reply)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "remote fail");
+        return SANDBOX_MANAGER_SERVICE_REMOTE_ERR;
+    }
+
+    int32_t remoteRet;
+    if (!reply.ReadInt32(remoteRet)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read ret fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+
+    if (remoteRet == SANDBOX_MANAGER_OK && !reply.ReadUInt32Vector(&result)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read result fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    return remoteRet;
+}
+
+int32_t SandboxManagerProxy::UnPersistPolicyByTokenId(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+{
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(ISandboxManager::GetDescriptor())) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write descriptor fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write tokenId fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    PolicyInfoVectorParcel policyInfoVectorParcel;
+    policyInfoVectorParcel.policyVector = policy;
+    if (!data.WriteParcelable(&policyInfoVectorParcel)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write policyInfoVectorParcel fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    
+    MessageParcel reply;
+    if (!SendRequest(SandboxManagerInterfaceCode::UNPERSIST_PERMISSION_BY_TOKENID, data, reply)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "remote fail");
+        return SANDBOX_MANAGER_SERVICE_REMOTE_ERR;
+    }
+
+    int32_t remoteRet;
+    if (!reply.ReadInt32(remoteRet)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read ret fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+
+    if (remoteRet == SANDBOX_MANAGER_OK && !reply.ReadUInt32Vector(&result)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read result fail");
+        return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
+    }
+    return remoteRet;
+}
+
+int32_t SandboxManagerProxy::SetPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy,
     uint64_t policyFlag)
 {
     MessageParcel data;
@@ -135,8 +212,8 @@ int32_t SandboxManagerProxy::setPolicy(uint64_t tokenid, const std::vector<Polic
         SANDBOXMANAGER_LOG_ERROR(LABEL, "Write descriptor fail");
         return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
     }
-    if (!data.WriteUint64(tokenid)) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write tokenid fail");
+    if (!data.WriteUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write tokenId fail");
         return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
     }
     
@@ -167,7 +244,7 @@ int32_t SandboxManagerProxy::setPolicy(uint64_t tokenid, const std::vector<Polic
     return remoteRet;
 }
 
-int32_t SandboxManagerProxy::startAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerProxy::StartAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(ISandboxManager::GetDescriptor())) {
@@ -202,7 +279,7 @@ int32_t SandboxManagerProxy::startAccessingPolicy(const std::vector<PolicyInfo> 
     return remoteRet;
 }
 
-int32_t SandboxManagerProxy::stopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerProxy::StopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(ISandboxManager::GetDescriptor())) {
@@ -237,7 +314,7 @@ int32_t SandboxManagerProxy::stopAccessingPolicy(const std::vector<PolicyInfo> &
     return remoteRet;
 }
 
-int32_t SandboxManagerProxy::checkPersistPermission(uint64_t tokenid, const std::vector<PolicyInfo> &policy,
+int32_t SandboxManagerProxy::CheckPersistPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy,
     std::vector<bool> &result)
 {
     MessageParcel data;
@@ -245,8 +322,8 @@ int32_t SandboxManagerProxy::checkPersistPermission(uint64_t tokenid, const std:
         SANDBOXMANAGER_LOG_ERROR(LABEL, "Write descriptor fail");
         return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
     }
-    if (!data.WriteUint64(tokenid)) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write tokenid fail");
+    if (!data.WriteUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Write tokenId fail");
         return SANDBOX_MANAGER_SERVICE_PARCEL_ERR;
     }
     

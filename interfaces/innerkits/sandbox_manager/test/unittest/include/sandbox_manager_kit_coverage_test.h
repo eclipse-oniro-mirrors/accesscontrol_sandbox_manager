@@ -13,25 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
-#define SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
+#ifndef SANDBOXMANAGER_KIT_COVERAGE_TEST_H
+#define SANDBOXMANAGER_KIT_COVERAGE_TEST_H
+
+#include <gtest/gtest.h>
 
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
-/* SAID:3508*/
-enum class SandboxManagerInterfaceCode {
-    PERSIST_PERMISSION = 0xffb0,
-    UNPERSIST_PERMISSION,
-    SET_POLICY,
-    START_ACCESSING_URI,
-    STOP_ACCESSING_URI,
-    CHECK_PERSIST_PERMISSION,
-    PERSIST_PERMISSION_BY_TOKENID,
-    UNPERSIST_PERMISSION_BY_TOKENID,
-};
-} // namespace SandboxManager
-} // namespace AccessControl
-} // namespace OHOS
+class SandboxManagerKitCoverageTest : public testing::Test {
+public:
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 
-#endif //SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
+    void SetUp();
+    void TearDown();
+};
+} //SandboxManager
+} //AccessControl
+} // OHOS
+
+#endif // SANDBOXMANAGER_KIT_COVERAGE_TEST_H

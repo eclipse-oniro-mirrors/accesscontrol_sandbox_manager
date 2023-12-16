@@ -36,16 +36,17 @@ public:
     virtual void DelayUnloadService() = 0;
 
 private:
-    void persistPermissionInner(MessageParcel &data, MessageParcel &reply);
-    void unPersistPermissionInner(MessageParcel &data, MessageParcel &reply);
-    void setPolicyInner(MessageParcel &data, MessageParcel &reply);
-    void startAccessingPolicyInner(MessageParcel &data, MessageParcel &reply);
-    void stopAccessingPolicyInner(MessageParcel &data, MessageParcel &reply);
-    void checkPersistPermissionInner(MessageParcel &data, MessageParcel &reply);
+    void PersistPolicyInner(MessageParcel &data, MessageParcel &reply);
+    void UnPersistPolicyInner(MessageParcel &data, MessageParcel &reply);
+    void PersistPolicyByTokenIdInner(MessageParcel &data, MessageParcel &reply);
+    void UnPersistPolicyByTokenIdInner(MessageParcel &data, MessageParcel &reply);
+    void SetPolicyInner(MessageParcel &data, MessageParcel &reply);
+    void StartAccessingPolicyInner(MessageParcel &data, MessageParcel &reply);
+    void StopAccessingPolicyInner(MessageParcel &data, MessageParcel &reply);
+    void CheckPersistPolicyInner(MessageParcel &data, MessageParcel &reply);
     void SetPolicyOpFuncInMap();
 
-    bool CheckAccessPersistPermission(const uint64_t tokenid);
-    bool CheckSetPolicyPermission(const uint64_t tokenid);
+    bool CheckPermission(const uint64_t tokenId, const std::string &permission);
 
     using RequestFuncType = void (SandboxManagerStub::*)(MessageParcel &data, MessageParcel &reply);
     std::map<uint32_t, RequestFuncType> requestFuncMap_;

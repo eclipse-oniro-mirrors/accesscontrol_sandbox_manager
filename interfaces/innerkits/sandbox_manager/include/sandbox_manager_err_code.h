@@ -15,6 +15,7 @@
 
 #ifndef SANDBOX_MANAGER_ERR_CODE_H
 #define SANDBOX_MANAGER_ERR_CODE_H
+#include <cstdint>
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {

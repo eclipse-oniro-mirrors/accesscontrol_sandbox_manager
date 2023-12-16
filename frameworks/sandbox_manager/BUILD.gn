@@ -34,7 +34,8 @@ ohos_shared_library("sandbox_manager_communication_adapter_cxx") {
     debug = true
   }
 
-  public_configs = [ ":sandbox_manager_communication_adapter_cxx_public_config" ]
+  public_configs =
+      [ ":sandbox_manager_communication_adapter_cxx_public_config" ]
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
   include_dirs = [
@@ -48,9 +49,8 @@ ohos_shared_library("sandbox_manager_communication_adapter_cxx") {
     "src/policy_info_vector_parcel.cpp",
   ]
 
-  dep = [
-    "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
-  ]
+  dep =
+      [ "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx" ]
 
   external_deps = [ "c_utils:utils" ]
 }

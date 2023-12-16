@@ -28,8 +28,22 @@ public:
     uint64_t mode;
 };
 
+typedef enum SandboxRetType {
+    OPERATE_SUCCESSFULLY = 0,
+    FORBIDDEN_TO_BE_PERSISTED = 1,
+    INVALID_MODE = 2,
+    INVALID_PATH = 3,
+    POLICY_HAS_NOT_BEEN_PERSISTED = 4,
+    POLICY_HAS_BEEN_PERSISTED = 5,
+} SandboxRetType;
+
+const uint32_t IS_POLICY_ALLOWED_TO_BE_PRESISTED = 1 << 0;
+
+typedef enum OperateMode {
+    READ_MODE = 1 << 0,
+    WRITE_MODE = 1 << 1,
+} OperateMode;
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS
-
 #endif // POLICY_INFO_H

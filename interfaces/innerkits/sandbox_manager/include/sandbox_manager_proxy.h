@@ -31,14 +31,18 @@ public:
     explicit SandboxManagerProxy(const sptr<IRemoteObject> &impl);
     ~SandboxManagerProxy() override;
 
-    int32_t persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
-    int32_t unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
-    int32_t setPolicy(
-        uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag) override;
-    int32_t startAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
-    int32_t stopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
-    int32_t checkPersistPermission(
-        uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result) override;
+    int32_t PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
+    int32_t UnPersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
+    int32_t SetPolicy(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, uint64_t policyFlag) override;
+    int32_t StartAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
+    int32_t StopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
+    int32_t CheckPersistPolicy(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<bool> &result) override;
+    int32_t PersistPolicyByTokenId(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
+    int32_t UnPersistPolicyByTokenId(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
 
 private:
     bool SendRequest(SandboxManagerInterfaceCode code, MessageParcel &data, MessageParcel &reply);

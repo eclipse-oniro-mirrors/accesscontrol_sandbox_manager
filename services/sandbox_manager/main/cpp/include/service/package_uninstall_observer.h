@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,25 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
-#define SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
+#ifndef PACKAGE_UNINSTALL_OBSERVER_H
+#define PACKAGE_UNINSTALL_OBSERVER_H
+#include "common_event_manager.h"
+#include "common_event_subscriber.h"
+#include "common_event_support.h"
 
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
-/* SAID:3508*/
-enum class SandboxManagerInterfaceCode {
-    PERSIST_PERMISSION = 0xffb0,
-    UNPERSIST_PERMISSION,
-    SET_POLICY,
-    START_ACCESSING_URI,
-    STOP_ACCESSING_URI,
-    CHECK_PERSIST_PERMISSION,
-    PERSIST_PERMISSION_BY_TOKENID,
-    UNPERSIST_PERMISSION_BY_TOKENID,
+class PkgUninstallObserver : public EventFwk::CommonEventSubscriber,
+    public std::enable_shared_from_this<PkgUninstallObserver> {
+public:
+    explicit PkgUninstallObserver(const EventFwk::CommonEventSubscribeInfo &subscribeInfo);
+    virtual ~PkgUninstallObserver() {};
+    virtual void OnReceiveEvent(const EventFwk::CommonEventData &data);
 };
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS
-
-#endif //SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
+#endif // PACKAGE_UNINSTALL_OBSERVER_H

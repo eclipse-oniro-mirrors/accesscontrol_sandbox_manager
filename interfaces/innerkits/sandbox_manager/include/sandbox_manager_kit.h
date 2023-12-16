@@ -36,13 +36,17 @@ namespace SandboxManager {
  */
 class SandboxManagerKit {
 public:
-    static int32_t persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int32_t unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int32_t setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag);
-    static int32_t startAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int32_t stopAccessingURI(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
-    static int32_t checkPersistPermission(
-        uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result);
+    static int32_t PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t UnPersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t PersistPolicy(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t UnPersistPolicy(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t SetPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, uint64_t policyFlag);
+    static int32_t StartAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t StopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);
+    static int32_t CheckPersistPolicy(
+        uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<bool> &result);
 };
 } // SandboxManager
 } // AccessControl

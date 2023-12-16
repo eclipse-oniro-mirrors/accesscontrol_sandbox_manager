@@ -15,10 +15,13 @@
 
 #include "sandbox_manager_service.h"
 
-#include <sys/types.h>
-#include <unistd.h>
+#include <cstddef>
+#include <cstdint>
+#include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
+#include "package_uninstall_observer.h"
+#include "policy_info_manager.h"
 #include "sandbox_manager_const.h"
 #include "sandbox_manager_err_code.h"
 #include "sandbox_manager_log.h"
@@ -81,49 +84,161 @@ void SandboxManagerService::OnStop()
     state_ = ServiceRunningState::STATE_NOT_START;
 }
 
-int32_t SandboxManagerService::persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerService::PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
-    result.resize(policy.size());
-    return 0;
+    uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    size_t policySize = policy.size();
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        return INVALID_PARAMTER;
+    }
+    result.resize(policySize);
+    return PolicyInfoManager::GetInstance().AddPolicy(callingTokenId, policy, result);
 }
 
-int32_t SandboxManagerService::unPersistPermission(
+int32_t SandboxManagerService::UnPersistPolicy(
     const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
-    result.resize(policy.size());
-    return 0;
+    uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    size_t policySize = policy.size();
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        return INVALID_PARAMTER;
+    }
+
+    result.resize(policySize);
+    return PolicyInfoManager::GetInstance().RemovePolicy(callingTokenId, policy, result);
 }
 
-int32_t SandboxManagerService::setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
+int32_t SandboxManagerService::PersistPolicyByTokenId(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
-    return 0;
+    size_t policySize = policy.size();
+    if ((policySize == 0) || (policySize > POLICY_VECTOR_SIZE_LIMIT) || (tokenId == 0)) {
+        SANDBOXMANAGER_LOG_ERROR(
+            LABEL, "policy vector size error: %{public}lu, tokenid is %{public}lu", policy.size(), tokenId);
+        return INVALID_PARAMTER;
+    }
+    result.resize(policySize);
+    return PolicyInfoManager::GetInstance().AddPolicy(tokenId, policy, result);
 }
 
-int32_t SandboxManagerService::startAccessingPolicy(
+int32_t SandboxManagerService::UnPersistPolicyByTokenId(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+{
+    size_t policySize = policy.size();
+    if ((policySize == 0) || (policySize > POLICY_VECTOR_SIZE_LIMIT) || (tokenId == 0)) {
+        SANDBOXMANAGER_LOG_ERROR(
+            LABEL, "policy vector size error: %{public}lu, tokenid is %{public}lu", policy.size(), tokenId);
+        return INVALID_PARAMTER;
+    }
+
+    result.resize(policySize);
+    return PolicyInfoManager::GetInstance().RemovePolicy(tokenId, policy, result);
+}
+
+int32_t SandboxManagerService::SetPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
+{
+    size_t policySize = policy.size();
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        return INVALID_PARAMTER;
+    }
+
+    if (policyFlag == IS_POLICY_ALLOWED_TO_BE_PRESISTED) {
+        SANDBOXMANAGER_LOG_INFO(LABEL, "Allow to set persistant");
+    } else {
+        SANDBOXMANAGER_LOG_INFO(LABEL, "NOT allow to set persistant");
+    }
+    // set to Mac here, FORBIDDEN_TO_BE_PERSISTED
+    return SANDBOX_MANAGER_OK;
+}
+
+int32_t SandboxManagerService::StartAccessingPolicy(
     const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
-    result.resize(policy.size());
-    return 0;
+    uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    size_t policySize = policy.size();
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        return INVALID_PARAMTER;
+    }
+
+    std::vector<uint32_t> matchResult(policy.size());
+
+    int32_t ret = PolicyInfoManager::GetInstance().MatchPolicy(callingTokenId, policy, matchResult);
+    if (ret != SANDBOX_MANAGER_OK) {
+        return ret;
+    }
+
+    // setURI here
+    result = matchResult;
+    return SANDBOX_MANAGER_OK;
 }
 
-int32_t SandboxManagerService::stopAccessingPolicy(
+int32_t SandboxManagerService::StopAccessingPolicy(
     const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
-    result.resize(policy.size());
-    return 0;
+    uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    size_t policySize = policy.size();
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        return INVALID_PARAMTER;
+    }
+
+    std::vector<uint32_t> matchResult(policy.size());
+    int32_t ret = PolicyInfoManager::GetInstance().MatchPolicy(callingTokenId, policy, matchResult);
+    if (ret != SANDBOX_MANAGER_OK) {
+        return ret;
+    }
+
+    // stopURI here
+    result = matchResult;
+    return SANDBOX_MANAGER_OK;
 }
 
-int32_t SandboxManagerService::checkPersistPermission(
-    uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result)
+int32_t SandboxManagerService::CheckPersistPolicy(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<bool> &result)
 {
-    result.resize(policy.size());
-    return 0;
+    size_t policySize = policy.size();
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        return INVALID_PARAMTER;
+    }
+
+    std::vector<uint32_t> matchResult(policySize);
+
+    int32_t ret = PolicyInfoManager::GetInstance().MatchPolicy(tokenId, policy, matchResult);
+    if (ret != SANDBOX_MANAGER_OK) {
+        return ret;
+    }
+    result.resize(policySize);
+    for (size_t i = 0; i < policy.size(); i++) {
+        result[i] = (matchResult[i] == OPERATE_SUCCESSFULLY);
+    }
+    return SANDBOX_MANAGER_OK;
 }
 
 bool SandboxManagerService::Initialize()
 {
     DelayUnloadService();
+    SubscribeUninstallEvent();
     return true;
+}
+
+void SandboxManagerService::SubscribeUninstallEvent()
+{
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_FULLY_REMOVED);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    auto pkgUninstallObserver = std::make_shared<PkgUninstallObserver>(subscribeInfo);
+    if (EventFwk::CommonEventManager::SubscribeCommonEvent(pkgUninstallObserver)) {
+        SANDBOXMANAGER_LOG_INFO(LABEL, "regist common event");
+    } else {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "regist common event error");
+    }
+    return;
 }
 
 void SandboxManagerService::DelayUnloadService()
@@ -145,7 +260,6 @@ void SandboxManagerService::DelayUnloadService()
             SANDBOXMANAGER_LOG_ERROR(LABEL, "unload system ability failed");
             return;
         }
-        SANDBOXMANAGER_LOG_DEBUG(LABEL, "unload service succ");
     };
     unloadHandler_->RemoveTask("SandboxManagerUnload");
     unloadHandler_->PostTask(task, "SandboxManagerUnload", SA_LIFE_TIME);

@@ -65,23 +65,23 @@ int32_t SandboxManagerStub::OnRemoteRequest(
     return NO_ERROR;
 }
 
-void SandboxManagerStub::persistPermissionInner(MessageParcel &data, MessageParcel &reply)
+void SandboxManagerStub::PersistPolicyInner(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    if (!CheckAccessPersistPermission(callingTokenId)) {
-        reply.WriteUint32(PERMISSION_DENIED);
+    if (!CheckPermission(callingTokenId, ACCESS_PERSIST_PERMISSION_NAME)) {
+        reply.WriteInt32(PERMISSION_DENIED);
         return;
     }
 
     sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
     if (policyInfoVectorParcel == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
     
     std::vector<uint32_t> result;
-    int32_t ret = this->persistPermission(policyInfoVectorParcel->policyVector, result);
+    int32_t ret = this->PersistPolicy(policyInfoVectorParcel->policyVector, result);
     if (!reply.WriteInt32(ret)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
         reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
@@ -98,24 +98,24 @@ void SandboxManagerStub::persistPermissionInner(MessageParcel &data, MessageParc
     return;
 }
 
-void SandboxManagerStub::unPersistPermissionInner(MessageParcel &data, MessageParcel &reply)
+void SandboxManagerStub::UnPersistPolicyInner(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    if (!CheckAccessPersistPermission(callingTokenId)) {
-        reply.WriteUint32(PERMISSION_DENIED);
+    if (!CheckPermission(callingTokenId, ACCESS_PERSIST_PERMISSION_NAME)) {
+        reply.WriteInt32(PERMISSION_DENIED);
         return;
     }
 
     sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
     if (policyInfoVectorParcel == nullptr) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read sandbox manager data parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
     
     std::vector<uint32_t> result;
     
-    int32_t ret = this->unPersistPermission(policyInfoVectorParcel->policyVector, result);
+    int32_t ret = this->UnPersistPolicy(policyInfoVectorParcel->policyVector, result);
     if (!reply.WriteInt32(ret)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
         reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
@@ -132,36 +132,113 @@ void SandboxManagerStub::unPersistPermissionInner(MessageParcel &data, MessagePa
     return;
 }
 
-void SandboxManagerStub::setPolicyInner(MessageParcel &data, MessageParcel &reply)
+void SandboxManagerStub::PersistPolicyByTokenIdInner(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    if (!CheckSetPolicyPermission(callingTokenId)) {
+    if (!CheckPermission(callingTokenId, ACCESS_PERSIST_PERMISSION_NAME)) {
+        reply.WriteInt32(PERMISSION_DENIED);
+        return;
+    }
+    uint64_t tokenId;
+    if (!data.ReadUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read tokenId parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        return;
+    }
+    sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
+    if (policyInfoVectorParcel == nullptr) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "read sandbox manager data parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        return;
+    }
+    
+    std::vector<uint32_t> result;
+    int32_t ret = this->PersistPolicyByTokenId(tokenId, policyInfoVectorParcel->policyVector, result);
+    if (!reply.WriteInt32(ret)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        return;
+    }
+    if (ret != SANDBOX_MANAGER_OK) {
+        return;
+    }
+
+    if (!reply.WriteUInt32Vector(result)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager vector parcel fail");
+        return;
+    }
+    return;
+}
+
+void SandboxManagerStub::UnPersistPolicyByTokenIdInner(MessageParcel &data, MessageParcel &reply)
+{
+    uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    if (!CheckPermission(callingTokenId, ACCESS_PERSIST_PERMISSION_NAME)) {
+        reply.WriteUint32(PERMISSION_DENIED);
+        return;
+    }
+    uint64_t tokenId;
+    if (!data.ReadUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply tokenId parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        return;
+    }
+    sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
+    if (policyInfoVectorParcel == nullptr) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        return;
+    }
+    
+    std::vector<uint32_t> result;
+    
+    int32_t ret = this->UnPersistPolicyByTokenId(tokenId, policyInfoVectorParcel->policyVector, result);
+    if (!reply.WriteInt32(ret)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        return;
+    }
+    if (ret != SANDBOX_MANAGER_OK) {
+        return;
+    }
+
+    if (!reply.WriteUInt32Vector(result)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager vector parcel fail");
+        return;
+    }
+    return;
+}
+
+void SandboxManagerStub::SetPolicyInner(MessageParcel &data, MessageParcel &reply)
+{
+    uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
+    if (!CheckPermission(callingTokenId, SET_POLICY_PERMISSION_NAME)) {
         reply.WriteUint32(PERMISSION_DENIED);
         return;
     }
 
-    uint64_t tokenid;
-    if (!data.ReadUint64(tokenid)) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply tokenid parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+    uint64_t tokenId;
+    if (!data.ReadUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply tokenId parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
 
     sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
     if (policyInfoVectorParcel == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
 
     uint64_t policyFlag;
     if (!data.ReadUint64(policyFlag)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "read policyFlag parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
     
-    int32_t ret = this->setPolicy(tokenid, policyInfoVectorParcel->policyVector, policyFlag);
+    int32_t ret = this->SetPolicy(tokenId, policyInfoVectorParcel->policyVector, policyFlag);
     if (!reply.WriteInt32(ret)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
         reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
@@ -170,23 +247,23 @@ void SandboxManagerStub::setPolicyInner(MessageParcel &data, MessageParcel &repl
     return;
 }
 
-void SandboxManagerStub::startAccessingPolicyInner(MessageParcel &data, MessageParcel &reply)
+void SandboxManagerStub::StartAccessingPolicyInner(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    if (!CheckAccessPersistPermission(callingTokenId)) {
-        reply.WriteUint32(PERMISSION_DENIED);
+    if (!CheckPermission(callingTokenId, ACCESS_PERSIST_PERMISSION_NAME)) {
+        reply.WriteInt32(PERMISSION_DENIED);
         return;
     }
 
     sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
     if (policyInfoVectorParcel == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
     
     std::vector<uint32_t> result;
-    int32_t ret = this->startAccessingPolicy(policyInfoVectorParcel->policyVector, result);
+    int32_t ret = this->StartAccessingPolicy(policyInfoVectorParcel->policyVector, result);
     if (!reply.WriteInt32(ret)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
         reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
@@ -203,24 +280,24 @@ void SandboxManagerStub::startAccessingPolicyInner(MessageParcel &data, MessageP
     return;
 }
 
-void SandboxManagerStub::stopAccessingPolicyInner(MessageParcel &data, MessageParcel &reply)
+void SandboxManagerStub::StopAccessingPolicyInner(MessageParcel &data, MessageParcel &reply)
 {
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
-    if (!CheckAccessPersistPermission(callingTokenId)) {
-        reply.WriteUint32(PERMISSION_DENIED);
+    if (!CheckPermission(callingTokenId, ACCESS_PERSIST_PERMISSION_NAME)) {
+        reply.WriteInt32(PERMISSION_DENIED);
         return;
     }
 
     sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
     if (policyInfoVectorParcel == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
     
     std::vector<uint32_t> result;
     
-    int32_t ret = this->stopAccessingPolicy(policyInfoVectorParcel->policyVector, result);
+    int32_t ret = this->StopAccessingPolicy(policyInfoVectorParcel->policyVector, result);
     if (!reply.WriteInt32(ret)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
         reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
@@ -237,24 +314,24 @@ void SandboxManagerStub::stopAccessingPolicyInner(MessageParcel &data, MessagePa
     return;
 }
 
-void SandboxManagerStub::checkPersistPermissionInner(MessageParcel &data, MessageParcel &reply)
+void SandboxManagerStub::CheckPersistPolicyInner(MessageParcel &data, MessageParcel &reply)
 {
-    uint64_t tokenid;
-    if (!data.ReadUint64(tokenid)) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply tokenid parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+    uint64_t tokenId;
+    if (!data.ReadUint64(tokenId)) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "reply tokenId parcel fail");
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
 
     sptr<PolicyInfoVectorParcel> policyInfoVectorParcel = data.ReadParcelable<PolicyInfoVectorParcel>();
     if (policyInfoVectorParcel == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager data parcel fail");
-        reply.WriteUint32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
+        reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
         return;
     }
 
     std::vector<bool> result;
-    int32_t ret = this->checkPersistPermission(tokenid, policyInfoVectorParcel->policyVector, result);
+    int32_t ret = this->CheckPersistPolicy(tokenId, policyInfoVectorParcel->policyVector, result);
     if (!reply.WriteInt32(ret)) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "reply sandbox manager ret parcel fail");
         reply.WriteInt32(SANDBOX_MANAGER_SERVICE_PARCEL_ERR);
@@ -274,17 +351,21 @@ void SandboxManagerStub::checkPersistPermissionInner(MessageParcel &data, Messag
 void SandboxManagerStub::SetPolicyOpFuncInMap()
 {
     requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::PERSIST_PERMISSION)] =
-        &SandboxManagerStub::persistPermissionInner;
+        &SandboxManagerStub::PersistPolicyInner;
     requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::UNPERSIST_PERMISSION)] =
-        &SandboxManagerStub::unPersistPermissionInner;
+        &SandboxManagerStub::UnPersistPolicyInner;
+    requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::PERSIST_PERMISSION_BY_TOKENID)] =
+        &SandboxManagerStub::PersistPolicyByTokenIdInner;
+    requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::UNPERSIST_PERMISSION_BY_TOKENID)] =
+        &SandboxManagerStub::UnPersistPolicyByTokenIdInner;
     requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::SET_POLICY)] =
-        &SandboxManagerStub::setPolicyInner;
+        &SandboxManagerStub::SetPolicyInner;
     requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::START_ACCESSING_URI)] =
-        &SandboxManagerStub::startAccessingPolicyInner;
+        &SandboxManagerStub::StartAccessingPolicyInner;
     requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::STOP_ACCESSING_URI)] =
-        &SandboxManagerStub::stopAccessingPolicyInner;
+        &SandboxManagerStub::StopAccessingPolicyInner;
     requestFuncMap_[static_cast<uint32_t>(SandboxManagerInterfaceCode::CHECK_PERSIST_PERMISSION)] =
-        &SandboxManagerStub::checkPersistPermissionInner;
+        &SandboxManagerStub::CheckPersistPolicyInner;
 }
 
 SandboxManagerStub::SandboxManagerStub()
@@ -297,29 +378,16 @@ SandboxManagerStub::~SandboxManagerStub()
     requestFuncMap_.clear();
 }
 
-bool SandboxManagerStub::CheckAccessPersistPermission(const uint64_t tokenid)
+bool SandboxManagerStub::CheckPermission(const uint64_t tokenId, const std::string &permission)
 {
-    uint32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
-        tokenid, ACCESS_PERSIST_PERMISSION_NAME);
+    uint32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
     if (ret == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "Check permission token:%{public}lu pass", tokenid);
+        SANDBOXMANAGER_LOG_INFO(LABEL, "Check permission token:%{public}lu pass", tokenId);
         return true;
     }
-    SANDBOXMANAGER_LOG_ERROR(LABEL, "Check permission token:%{public}lu fail", tokenid);
+    SANDBOXMANAGER_LOG_ERROR(LABEL, "Check permission token:%{public}lu fail", tokenId);
     return false;
 }
-
-bool SandboxManagerStub::CheckSetPolicyPermission(const uint64_t tokenid)
-{
-    uint32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenid, SET_POLICY_PERMISSION_NAME);
-    if (ret == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "Check permission token:%{public}lu pass", tokenid);
-        return true;
-    }
-    SANDBOXMANAGER_LOG_ERROR(LABEL, "Check permission token:%{public}lu fail", tokenid);
-    return false;
-}
-
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS

@@ -57,7 +57,6 @@ void SandboxManagerLoadCallback::OnLoadSystemAbilityFail(int32_t systemAbilityId
 
     SandboxManagerClient::GetInstance().FinishStartSAFail();
 }
-
 } // SandboxManager
 } // AccessControl
 } // OHOS

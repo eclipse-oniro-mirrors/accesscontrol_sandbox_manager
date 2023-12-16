@@ -45,37 +45,59 @@ SandboxManagerClient::~SandboxManagerClient()
 {}
 
 
-int32_t SandboxManagerClient::persistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerClient::PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     auto proxy = GetProxy(true);
     if (proxy == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
         return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
     }
-    return proxy->persistPermission(policy, result);
+    return proxy->PersistPolicy(policy, result);
 }
 
-int32_t SandboxManagerClient::unPersistPermission(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerClient::UnPersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     auto proxy = GetProxy(true);
     if (proxy == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
         return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
     }
-    return proxy->unPersistPermission(policy, result);
+    return proxy->UnPersistPolicy(policy, result);
 }
 
-int32_t SandboxManagerClient::setPolicy(uint64_t tokenid, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
+int32_t SandboxManagerClient::PersistPolicyByTokenId(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     auto proxy = GetProxy(true);
     if (proxy == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
         return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
     }
-    return proxy->setPolicy(tokenid, policy, policyFlag);
+    return proxy->PersistPolicyByTokenId(tokenId, policy, result);
 }
 
-int32_t SandboxManagerClient::startAccessingPolicy(
+int32_t SandboxManagerClient::UnPersistPolicyByTokenId(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+{
+    auto proxy = GetProxy(true);
+    if (proxy == nullptr) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
+        return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
+    }
+    return proxy->UnPersistPolicyByTokenId(tokenId, policy, result);
+}
+
+int32_t SandboxManagerClient::SetPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
+{
+    auto proxy = GetProxy(true);
+    if (proxy == nullptr) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
+        return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
+    }
+    return proxy->SetPolicy(tokenId, policy, policyFlag);
+}
+
+int32_t SandboxManagerClient::StartAccessingPolicy(
     const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     auto proxy = GetProxy(true);
@@ -83,28 +105,28 @@ int32_t SandboxManagerClient::startAccessingPolicy(
         SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
         return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
     }
-    return proxy->startAccessingPolicy(policy, result);
+    return proxy->StartAccessingPolicy(policy, result);
 }
 
-int32_t SandboxManagerClient::stopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
+int32_t SandboxManagerClient::StopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
 {
     auto proxy = GetProxy(true);
     if (proxy == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
         return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
     }
-    return proxy->stopAccessingPolicy(policy, result);
+    return proxy->StopAccessingPolicy(policy, result);
 }
 
-int32_t SandboxManagerClient::checkPersistPermission(
-    uint64_t tokenid, const std::vector<PolicyInfo> &policy, std::vector<bool> &result)
+int32_t SandboxManagerClient::CheckPersistPolicy(
+    uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<bool> &result)
 {
     auto proxy = GetProxy(true);
     if (proxy == nullptr) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "proxy is null");
         return SANDBOX_MANAGER_SERVICE_NOT_EXIST;
     }
-    return proxy->checkPersistPermission(tokenid, policy, result);
+    return proxy->CheckPersistPolicy(tokenId, policy, result);
 }
 
 bool SandboxManagerClient::StartLoadSandboxManagerSa()

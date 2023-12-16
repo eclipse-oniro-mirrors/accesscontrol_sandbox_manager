@@ -12,60 +12,72 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("../../../../sandbox_manager.gni")
+import("../../../sandbox_manager.gni")
 
-sandbox_manager_interface_src = [
-  "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/src/sandbox_manager_client.cpp",
-  "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/src/sandbox_manager_death_recipient.cpp",
-  "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/src/sandbox_manager_kit.cpp",
-  "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/src/sandbox_manager_load_callback.cpp",
-  "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/src/sandbox_manager_proxy.cpp",
+sandbox_manager_service_src = [
+  "../main/cpp/src/service/sandbox_manager_service.cpp",
+  "../main/cpp/src/service/sandbox_manager_stub.cpp",
+  "../main/cpp/src/service/package_uninstall_observer.cpp",
+  "../main/cpp/src/service/policy_info_manager.cpp",
+  "../main/cpp/src/database/policy_field_const.cpp",
+  "../main/cpp/src/database/sandbox_manager_db.cpp",
 ]
 
-ohos_unittest("libsandbox_manager_sdk_test") {
+ohos_unittest("libsandbox_manager_service_standard_test") {
   subsystem_name = "accesscontrol"
   part_name = "sandbox_manager"
   module_out_path = part_name + "/" + part_name
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   include_dirs = [
     "${sandbox_manager_path}/frameworks/sandbox_manager/include",
     "${sandbox_manager_path}/frameworks/common/include",
-    "../include",
-    "../src",
+    "${sandbox_manager_path}/services/common/database/include",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/database",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/service",
     "//third_party/googletest/include",
     "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-    "unittest/include",
+    "//third_party/sqlite/include/",
+    "//base/security/access_token/interfaces/innerkits/accesstoken/include",
   ]
 
   sources = [
-    "unittest/src/sandbox_manager_kit_coverage_test.cpp",
-    "unittest/src/sandbox_manager_kit_test.cpp",
+    "unittest/policy_info_manager_test.cpp",
+    "unittest/sandbox_manager_db_test.cpp",
+    "unittest/sandbox_manager_service_test.cpp",
   ]
-  sources += sandbox_manager_interface_src
+  sources += sandbox_manager_service_src
 
   cflags_cc = [ "-DHILOG_ENABLE" ]
 
   deps = [
     "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
     "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
-    "../:libsandbox_manager_sdk",
+    "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
+    "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service",
+    "//third_party/sqlite:sqlite",
   ]
 
   external_deps = [
+    "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
     "c_utils:utils",
+    "common_event_service:cesfwk_core",
     "common_event_service:cesfwk_innerkits",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
-    "ipc:ipc_single",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 }
 
 group("unittest") {
   testonly = true
-  deps = [ ":libsandbox_manager_sdk_test" ]
+  deps = [ ":libsandbox_manager_service_standard_test" ]
 }

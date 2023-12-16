@@ -13,25 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
-#define SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
+#ifndef POLICY_FIELD_CONST_H
+#define POLICY_FIELD_CONST_H
+
+#include <string>
+#include <cstdint>
 
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
-/* SAID:3508*/
-enum class SandboxManagerInterfaceCode {
-    PERSIST_PERMISSION = 0xffb0,
-    UNPERSIST_PERMISSION,
-    SET_POLICY,
-    START_ACCESSING_URI,
-    STOP_ACCESSING_URI,
-    CHECK_PERSIST_PERMISSION,
-    PERSIST_PERMISSION_BY_TOKENID,
-    UNPERSIST_PERMISSION_BY_TOKENID,
+class PolicyFiledConst {
+public:
+    const static std::string FIELD_TOKENID;
+    const static std::string FIELD_PATH;
+    const static std::string FIELD_MODE;
+    const static std::string FIELD_DEPTH;
+    const static std::string FIELD_FLAG;
 };
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS
-
-#endif //SANDBOXMANAGER_SERVICE_IPC_INTERFACE_CODE_H
+#endif // POLICY_FIELD_CONST_H

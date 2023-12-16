@@ -32,5 +32,4 @@ public:
 } //SandboxManager
 } //AccessControl
 } // OHOS
-
 #endif // SANDBOXMANAGER_KIT_TEST_H
