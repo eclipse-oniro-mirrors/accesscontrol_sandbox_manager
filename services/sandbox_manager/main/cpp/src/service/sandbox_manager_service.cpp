@@ -223,6 +223,7 @@ bool SandboxManagerService::Initialize()
 {
     DelayUnloadService();
     SubscribeUninstallEvent();
+    PolicyInfoManager::GetInstance().Init();
     return true;
 }
 

@@ -45,6 +45,11 @@ PolicyInfoManager &PolicyInfoManager::GetInstance()
     return instance;
 }
 
+void PolicyInfoManager::Init()
+{
+    SandboxManagerDb::GetInstance();
+}
+
 int32_t PolicyInfoManager::AddPolicy(const uint64_t tokenId, const std::vector<PolicyInfo> &policy,
     std::vector<uint32_t> &result, const uint32_t flag)
 {

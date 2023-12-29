@@ -31,6 +31,7 @@ public:
     static PolicyInfoManager &GetInstance();
     PolicyInfoManager() = default;
     virtual ~PolicyInfoManager() = default;
+    void Init();
     /**
      * @brief Insert policys to database
      * @param tokenId token id of the object
