@@ -14,6 +14,8 @@
 1.0 {
   global:
     extern "C++" {
+        "OHOS::AccessControl::SandboxManager::SandboxManagerKit::PersistPolicy(unsigned long, std::__h::vector<OHOS::AccessControl::SandboxManager::PolicyInfo, std::__h::allocator<OHOS::AccessControl::SandboxManager::PolicyInfo>> const&, std::__h::vector<unsigned int, std::__h::allocator<unsigned int>>&)";
+        "OHOS::AccessControl::SandboxManager::SandboxManagerKit::UnPersistPolicy(unsigned long, std::__h::vector<OHOS::AccessControl::SandboxManager::PolicyInfo, std::__h::allocator<OHOS::AccessControl::SandboxManager::PolicyInfo>> const&, std::__h::vector<unsigned int, std::__h::allocator<unsigned int>>&)";
         "OHOS::AccessControl::SandboxManager::SandboxManagerKit::PersistPolicy(std::__h::vector<OHOS::AccessControl::SandboxManager::PolicyInfo, std::__h::allocator<OHOS::AccessControl::SandboxManager::PolicyInfo>> const&, std::__h::vector<unsigned int, std::__h::allocator<unsigned int>>&)";
         "OHOS::AccessControl::SandboxManager::SandboxManagerKit::UnPersistPolicy(std::__h::vector<OHOS::AccessControl::SandboxManager::PolicyInfo, std::__h::allocator<OHOS::AccessControl::SandboxManager::PolicyInfo>> const&, std::__h::vector<unsigned int, std::__h::allocator<unsigned int>>&)";
         "OHOS::AccessControl::SandboxManager::SandboxManagerKit::SetPolicy(unsigned long, std::__h::vector<OHOS::AccessControl::SandboxManager::PolicyInfo, std::__h::allocator<OHOS::AccessControl::SandboxManager::PolicyInfo>> const&, unsigned long)";
