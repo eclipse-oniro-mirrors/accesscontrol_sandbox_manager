@@ -53,7 +53,8 @@
         }
       ],
       "test": [
-        "//base/accesscontrol/sandbox_manager:sandbox_manager_build_module_test"
+        "//base/accesscontrol/sandbox_manager:sandbox_manager_build_module_test",
+        "//base/accesscontrol/sandbox_manager:sandbox_manager_build_fuzz_test"
       ]
     }
   }
