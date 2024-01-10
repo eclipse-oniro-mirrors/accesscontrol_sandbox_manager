@@ -28,12 +28,6 @@ ohos_unittest("libsandbox_manager_service_standard_test") {
   part_name = "sandbox_manager"
   module_out_path = part_name + "/" + part_name
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-
   include_dirs = [
     "${sandbox_manager_path}/frameworks/sandbox_manager/include",
     "${sandbox_manager_path}/frameworks/common/include",

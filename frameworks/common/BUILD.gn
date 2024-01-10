@@ -31,12 +31,6 @@ ohos_shared_library("sandbox_manager_common_cxx") {
     "include",
   ]
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = true
-  }
-
   sources = []
 
   deps = []

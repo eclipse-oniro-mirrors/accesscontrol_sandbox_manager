@@ -28,12 +28,6 @@ ohos_shared_library("sandbox_manager_communication_adapter_cxx") {
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "sandbox_manager"
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = true
-  }
-
   public_configs =
       [ ":sandbox_manager_communication_adapter_cxx_public_config" ]
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]

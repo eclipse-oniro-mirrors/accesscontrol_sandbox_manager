@@ -29,12 +29,6 @@ if (is_standard_system) {
       version_script = "sandbox_manager_service.map"
     }
 
-    sanitize = {
-      cfi = true
-      cfi_cross_dso = true
-      debug = false
-    }
-
     include_dirs = [
       "${sandbox_manager_path}/frameworks/sandbox_manager/include",
       "${sandbox_manager_path}/frameworks/common/include",

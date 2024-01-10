@@ -18,11 +18,6 @@ ohos_unittest("libsandbox_manager_communication_adapter_cxx_test") {
   subsystem_name = "accesscontrol"
   part_name = "sandbox_manager"
   module_out_path = part_name + "/" + part_name
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
 
   sources = [ "unittest/sandbox_manager_parcel_test.cpp" ]
 
