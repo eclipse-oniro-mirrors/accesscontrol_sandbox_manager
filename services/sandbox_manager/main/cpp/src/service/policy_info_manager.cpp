@@ -16,9 +16,6 @@
 #include "policy_info_manager.h"
 
 #include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <climits>
 #include <string>
 #include <vector>
 #include "accesstoken_kit.h"
@@ -312,18 +309,10 @@ bool PolicyInfoManager::IsPolicyMatch(const PolicyInfo &searchPolicy, const uint
 
 std::string PolicyInfoManager::AdjustPath(const std::string &path)
 {
-    const char *inputPath = path.c_str();
-    SANDBOXMANAGER_LOG_DEBUG(LABEL, "input path: %{public}s", path.c_str());
-    char resolvedPath[PATH_MAX] = {0};
-    char *ret = realpath(inputPath, resolvedPath);
-    SANDBOXMANAGER_LOG_DEBUG(LABEL, "get ret: %{public}s", ret);
-    if (ret != nullptr) {
-        SANDBOXMANAGER_LOG_DEBUG(LABEL, "path after realpath: %{public}s", resolvedPath);
-        return std::string(resolvedPath);
-    } else {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "realpath error, input: %{public}s", path.c_str());
-        return std::string();
+    if (path[path.length() - 1] == '/') {
+        return path.substr(0, path.length() - 1);
     }
+    return path;
 }
 
 int32_t PolicyInfoManager::CheckPolicyValidity(const PolicyInfo &policy)
@@ -335,10 +324,6 @@ int32_t PolicyInfoManager::CheckPolicyValidity(const PolicyInfo &policy)
         return SandboxRetType::INVALID_PATH;
     }
     std::string path = AdjustPath(policy.path);
-    if (path.empty()) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy path realpath check fail: %{public}s", policy.path.c_str());
-        return SandboxRetType::INVALID_PATH;
-    }
 
     // mode between 0 and 0b11(READ_MODE+WRITE_MODE)
     if (policy.mode < OperateMode::READ_MODE ||
