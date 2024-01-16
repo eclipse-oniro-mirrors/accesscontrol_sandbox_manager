@@ -41,10 +41,6 @@ ohos_unittest("libsandbox_manager_service_standard_test") {
     "${sandbox_manager_path}/services/common/database/include",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/database",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/service",
-    "//third_party/googletest/include",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "//third_party/sqlite/include/",
-    "//base/security/access_token/interfaces/innerkits/accesstoken/include",
   ]
 
   sources = [
@@ -61,7 +57,6 @@ ohos_unittest("libsandbox_manager_service_standard_test") {
     "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
     "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
     "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service",
-    "//third_party/sqlite:sqlite",
   ]
 
   external_deps = [
@@ -75,6 +70,7 @@ ohos_unittest("libsandbox_manager_service_standard_test") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "sqlite:sqlite",
   ]
 }
 

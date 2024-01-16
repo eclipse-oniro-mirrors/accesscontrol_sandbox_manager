@@ -31,10 +31,6 @@ ohos_unittest("libsandbox_manager_sdk_test") {
     "${sandbox_manager_path}/frameworks/common/include",
     "../include",
     "../src",
-    "//third_party/googletest/include",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy/include",
-    "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "unittest/include",
   ]
 
@@ -44,6 +40,7 @@ ohos_unittest("libsandbox_manager_sdk_test") {
   ]
 
   cflags_cc = [ "-DHILOG_ENABLE" ]
+  configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
   deps = [
     "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",

@@ -40,6 +40,7 @@ void PkgUninstallObserver::OnReceiveEvent(const EventFwk::CommonEventData& data)
         uint64_t tokenId = data.GetWant().GetParams().GetIntParam("accessTokenId", 0);
         if (tokenId == 0) {
             SANDBOXMANAGER_LOG_ERROR(LABEL, "Error Tokenid: %{public}lu", tokenId);
+            return;
         }
 
         SANDBOXMANAGER_LOG_INFO(LABEL, "action %{public}s bundle:%{public}lu is uninstall", action.c_str(), tokenId);

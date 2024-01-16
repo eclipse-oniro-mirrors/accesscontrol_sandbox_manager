@@ -41,10 +41,8 @@ ohos_shared_library("sandbox_manager_service_common") {
   cflags_cc = [ "-DHILOG_ENABLE" ]
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
-  deps = [
-    "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
-    "//third_party/sqlite:sqlite",
-  ]
+  deps =
+      [ "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx" ]
 
   external_deps = [
     "c_utils:utils",
@@ -52,5 +50,6 @@ ohos_shared_library("sandbox_manager_service_common") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "sqlite:sqlite",
   ]
 }

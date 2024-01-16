@@ -12,9 +12,8 @@
   "component": {
     "name": "sandbox_manager",
     "subsystem": "accesscontrol",
-    "syscap": [
-    ],
-    "features": [],
+    "syscap": [],
+    "features": [ "sandbox_manager_feature_coverage = false" ],
     "adapted_system_type": [ "standard" ],
     "rom": "10000KB",
     "ram": "5000KB",
@@ -28,11 +27,10 @@
         "access_token",
         "eventhandler",
         "common_event_service",
-        "ability_base"
-      ],
-      "third_party": [
+        "ability_base",
         "sqlite"
-      ]
+      ],
+      "third_party": []
     },
     "build": {
       "group_type":{

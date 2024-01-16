@@ -23,8 +23,6 @@ ohos_fuzztest("PersistPolicyTokenStubFuzzTest") {
     "${sandbox_manager_path}/frameworks/sandbox_manager/include",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/service",
     "../../../common",
-    "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
   cflags = [
     "-g",
@@ -43,7 +41,6 @@ ohos_fuzztest("PersistPolicyTokenStubFuzzTest") {
     "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk",
     "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
     "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service",
-    "//third_party/sqlite:sqlite",
   ]
 
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
@@ -57,6 +54,7 @@ ohos_fuzztest("PersistPolicyTokenStubFuzzTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "sqlite:sqlite",
   ]
 
   include_dirs += [
@@ -66,7 +64,6 @@ ohos_fuzztest("PersistPolicyTokenStubFuzzTest") {
     "${sandbox_manager_path}/services/common/database/include",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/database",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/service",
-    "//third_party/sqlite/include/",
   ]
 
   sources += [

@@ -14,18 +14,18 @@
 import("../../../../sandbox_manager.gni")
 
 group("fuzztest") {
-    testonly = true
-    deps = []
+  testonly = true
+  deps = []
 
-    deps += [
-        # deps file
-        "checkpersistpolicystub_fuzzer:CheckPersistPolicyStubFuzzTest",
-        "persistpolicystub_fuzzer:PersistPolicyStubFuzzTest",
-        "persistpolicytokenstub_fuzzer:PersistPolicyTokenStubFuzzTest",
-        "setpolicystub_fuzzer:SetPolicyStubFuzzTest",
-        "startaccessingpolicystub_fuzzer:StartAccessingPolicyStubFuzzTest",
-        "stopaccessingpolicystub_fuzzer:StopAccessingPolicyStubFuzzTest",
-        "unpersistpolicystub_fuzzer:UnPersistPolicyStubFuzzTest",
-        "unpersistpolicytokenstub_fuzzer:UnpersistPolicyTokenStubFuzzTest"
-    ]
+  deps += [
+    # deps file
+    "checkpersistpolicystub_fuzzer:CheckPersistPolicyStubFuzzTest",
+    "persistpolicystub_fuzzer:PersistPolicyStubFuzzTest",
+    "persistpolicytokenstub_fuzzer:PersistPolicyTokenStubFuzzTest",
+    "setpolicystub_fuzzer:SetPolicyStubFuzzTest",
+    "startaccessingpolicystub_fuzzer:StartAccessingPolicyStubFuzzTest",
+    "stopaccessingpolicystub_fuzzer:StopAccessingPolicyStubFuzzTest",
+    "unpersistpolicystub_fuzzer:UnPersistPolicyStubFuzzTest",
+    "unpersistpolicytokenstub_fuzzer:UnpersistPolicyTokenStubFuzzTest",
+  ]
 }

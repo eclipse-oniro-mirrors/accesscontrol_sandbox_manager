@@ -29,9 +29,7 @@ ohos_fuzztest("CheckPersistPolicyFuzzTest") {
   ]
   sources = [ "checkpersistpolicy_fuzzer.cpp" ]
 
-  deps = [
-    "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk",
-  ]
+  deps = [ "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk" ]
 
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 

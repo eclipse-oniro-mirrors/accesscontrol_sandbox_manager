@@ -37,6 +37,7 @@ ohos_unittest("libsandbox_manager_communication_adapter_cxx_test") {
     "c_utils:utils",
     "ipc:ipc_single",
   ]
+  configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 }
 
 group("unittest") {

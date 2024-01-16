@@ -22,8 +22,6 @@ ohos_fuzztest("UnpersistPolicyTokenFuzzTest") {
   include_dirs = [
     "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
     "../../../common",
-    "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
   cflags = [
     "-g",
@@ -32,13 +30,11 @@ ohos_fuzztest("UnpersistPolicyTokenFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
   sources = [
+    "../../../common/alloc_token.cpp",
     "unpersistpolicytoken_fuzzer.cpp",
-    "../../../common/alloc_token.cpp"
   ]
 
-  deps = [
-    "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk",
-  ]
+  deps = [ "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk" ]
 
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 

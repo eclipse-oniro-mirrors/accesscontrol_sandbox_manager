@@ -43,7 +43,6 @@ if (is_standard_system) {
       "${sandbox_manager_path}/services/common/database/include",
       "main/cpp/include/service",
       "main/cpp/include/database",
-      "//base/security/access_token/interfaces/innerkits/accesstoken/include",
     ]
 
     sources = [
@@ -57,16 +56,13 @@ if (is_standard_system) {
 
     cflags_cc = [ "-DHILOG_ENABLE" ]
 
-    if (build_variant == "user") {
-      cflags_cc += [ "-DATM_BUILD_VARIANT_USER_ENABLE" ]
-    }
+    configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
     deps = [
       "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
       "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
       "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
       "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service.rc",
-      "//third_party/sqlite:sqlite",
     ]
 
     external_deps = [
@@ -80,6 +76,7 @@ if (is_standard_system) {
       "ipc:ipc_core",
       "safwk:system_ability_fwk",
       "samgr:samgr_proxy",
+      "sqlite:sqlite",
     ]
   }
 }
