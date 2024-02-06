@@ -31,6 +31,13 @@ if (is_standard_system) {
       version_script = "libsandbox_manager_sdk.map"
     }
 
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
+    branch_protector_ret = "pac_ret"
+
     output_name = "libsandbox_manager_sdk"
 
     public_configs = [ ":sandbox_manager" ]

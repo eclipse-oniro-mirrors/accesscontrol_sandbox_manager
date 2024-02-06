@@ -41,6 +41,7 @@ ohos_fuzztest("UnpersistPolicyTokenStubFuzzTest") {
   deps = [
     "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
     "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
+    "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager:libsandbox_manager_sdk",
     "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
     "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service",
     "//third_party/sqlite:sqlite",
@@ -49,14 +50,14 @@ ohos_fuzztest("UnpersistPolicyTokenStubFuzzTest") {
   configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
   ]
 
   include_dirs += [
@@ -70,12 +71,16 @@ ohos_fuzztest("UnpersistPolicyTokenStubFuzzTest") {
   ]
 
   sources += [
-    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/sandbox_manager_service.cpp",
-    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/sandbox_manager_stub.cpp",
-    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/package_uninstall_observer.cpp",
-    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/policy_info_manager.cpp",
+    "${sandbox_manager_path}/services/common/database/src/generic_values.cpp",
+    "${sandbox_manager_path}/services/common/database/src/sqlite_helper.cpp",
+    "${sandbox_manager_path}/services/common/database/src/statement.cpp",
+    "${sandbox_manager_path}/services/common/database/src/variant_value.cpp",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/database/policy_field_const.cpp",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/database/sandbox_manager_db.cpp",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/package_uninstall_observer.cpp",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/policy_info_manager.cpp",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/sandbox_manager_service.cpp",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/src/service/sandbox_manager_stub.cpp",
   ]
 
   external_deps += [

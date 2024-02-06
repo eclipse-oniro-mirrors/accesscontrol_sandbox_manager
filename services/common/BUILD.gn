@@ -17,7 +17,14 @@ import("../../sandbox_manager.gni")
 ohos_shared_library("sandbox_manager_service_common") {
   subsystem_name = "accesscontrol"
   part_name = "sandbox_manager"
-  
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  branch_protector_ret = "pac_ret"
+
   include_dirs = [
     "${sandbox_manager_path}/frameworks/common/include",
     "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
