@@ -20,33 +20,26 @@
 
 #include "hilog/log.h"
 
-#ifndef __cplusplus
-
-#define SANDBOXMANAGER_LOG_DEBUG(fmt, ...) HILOG_DEBUG(LOG_CORE, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_INFO(fmt, ...) HILOG_INFO(LOG_CORE, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_WARN(fmt, ...) HILOG_WARN(LOG_CORE, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_ERROR(fmt, ...) HILOG_ERROR(LOG_CORE, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_FATAL(fmt, ...) HILOG_FATAL(LOG_CORE, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-
-#else
-
-#define SANDBOXMANAGER_LOG_DEBUG(label, fmt, ...) \
-    OHOS::HiviewDFX::HiLog::Debug(label, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_INFO(label, fmt, ...) \
-    OHOS::HiviewDFX::HiLog::Info(label, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_WARN(label, fmt, ...) \
-    OHOS::HiviewDFX::HiLog::Warn(label, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_ERROR(label, fmt, ...) \
-    OHOS::HiviewDFX::HiLog::Error(label, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-#define SANDBOXMANAGER_LOG_FATAL(label, fmt, ...) \
-    OHOS::HiviewDFX::HiLog::Fatal(label, "[%{public}s]:" fmt, __func__, ##__VA_ARGS__)
-
-#endif // __cplusplus
-
 /* define LOG_TAG as "accesscontrol_*" at your submodule, * means your submodule name such as "accesscontrol__dac" */
 #undef LOG_TAG
 #undef LOG_DOMAIN
 static constexpr unsigned int ACCESSCONTROL_DOMAIN_SANDBOXMANAGER = 0xD005A07;
+
+#define SANDBOXMANAGER_LOG_DEBUG(label, fmt, ...) \
+    ((void)HILOG_IMPL(label.type, LOG_DEBUG, label.domain, label.tag, \
+    "[%{public}s]" fmt, __FUNCTION__, ##__VA_ARGS__))
+#define SANDBOXMANAGER_LOG_INFO(label, fmt, ...) \
+    ((void)HILOG_IMPL(label.type, LOG_INFO, label.domain, label.tag, \
+    "[%{public}s]" fmt, __FUNCTION__, ##__VA_ARGS__))
+#define SANDBOXMANAGER_LOG_WARN(label, fmt, ...) \
+    ((void)HILOG_IMPL(label.type, LOG_WARN, label.domain, label.tag, \
+    "[%{public}s]" fmt, __FUNCTION__, ##__VA_ARGS__))
+#define SANDBOXMANAGER_LOG_ERROR(label, fmt, ...) \
+    ((void)HILOG_IMPL(label.type, LOG_ERROR, label.domain, label.tag, \
+    "[%{public}s]" fmt, __FUNCTION__, ##__VA_ARGS__))
+#define SANDBOXMANAGER_LOG_FATAL(label, fmt, ...) \
+    ((void)HILOG_IMPL(label.type, LOG_FATAL, label.domain, label.tag, \
+    "[%{public}s]" fmt, __FUNCTION__, ##__VA_ARGS__))
 
 #else
 
