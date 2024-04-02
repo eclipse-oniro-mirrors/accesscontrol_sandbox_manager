@@ -424,6 +424,32 @@ HWTEST_F(PolicyInfoManagerTest, PolicyInfoManagerTest006, TestSize.Level1)
     EXPECT_EQ(SandboxRetType::POLICY_HAS_NOT_BEEN_PERSISTED, result[0]);
 }
 
+/**
+ * @tc.name: GenericValuesTest001
+ * @tc.desc: Test generic_values.cpp
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyInfoManagerTest, GenericValuesTest001, TestSize.Level1)
+{
+    GenericValues conditions;
+    int32_t result = -1;
+    conditions.Get(PolicyFiledConst::FIELD_TOKENID);
+    EXPECT_EQ(result, conditions.GetInt(PolicyFiledConst::FIELD_TOKENID));
+    EXPECT_EQ(result, conditions.GetInt64(PolicyFiledConst::FIELD_TOKENID));
+
+    int64_t tokenId = 0;
+    conditions.Put(PolicyFiledConst::FIELD_TOKENID, tokenId);
+    EXPECT_EQ(tokenId, conditions.GetInt64(PolicyFiledConst::FIELD_TOKENID));
+    conditions.Remove(PolicyFiledConst::FIELD_TOKENID);
+
+    VariantValue variantValue;
+    EXPECT_EQ(-1, variantValue.GetInt());
+    EXPECT_EQ(-1, variantValue.GetInt64());
+    std::string str;
+    EXPECT_EQ(str, variantValue.GetString());
+}
+
 } // SandboxManager
 } // AccessControl
 } // OHOS

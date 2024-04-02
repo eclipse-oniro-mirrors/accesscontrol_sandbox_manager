@@ -261,6 +261,40 @@ HWTEST_F(SandboxManagerDbTest, SandboxManagerDbTest005, TestSize.Level1)
     EXPECT_EQ(8, dbResult[0].GetInt(PolicyFiledConst::FIELD_DEPTH));
 }
 
+/**
+ * @tc.name: SandboxManagerDbTest006
+ * @tc.desc: Test remove func (not exist record)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerDbTest, SandboxManagerDbTest006, TestSize.Level1)
+{
+    //db_ != nullptr
+    EXPECT_EQ(-1, SandboxManagerDb::GetInstance().RollbackTransaction());
+    std::string sql = "PRAGMA user_version";
+    EXPECT_NE(-1, SandboxManagerDb::GetInstance().ExecuteSql(sql));
+    SandboxManagerDb::GetInstance().SpitError();
+
+    SandboxManagerDb::GetInstance().OnCreate();
+    SandboxManagerDb::GetInstance().OnUpdate();
+    std::vector<GenericValues> values;
+    EXPECT_NE(-1, SandboxManagerDb::GetInstance().RefreshAll(SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY,
+        values));
+    values = {g_value1, g_value2, g_value3, g_value4, g_value5};
+    EXPECT_EQ(0, SandboxManagerDb::GetInstance().RefreshAll(SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY,
+        values));
+    SandboxManagerDb::GetInstance().Open();
+
+    //db_ = nullptr
+    SandboxManagerDb::GetInstance().Close();
+    SandboxManagerDb::GetInstance().Close();
+    EXPECT_EQ(-1, SandboxManagerDb::GetInstance().BeginTransaction());
+    EXPECT_EQ(-1, SandboxManagerDb::GetInstance().CommitTransaction());
+    EXPECT_EQ(-1, SandboxManagerDb::GetInstance().RollbackTransaction());
+    EXPECT_EQ(-1, SandboxManagerDb::GetInstance().ExecuteSql(sql));
+    SandboxManagerDb::GetInstance().SpitError();
+}
+
 } // SandboxManager
 } // AccessControl
 } // OHOS
