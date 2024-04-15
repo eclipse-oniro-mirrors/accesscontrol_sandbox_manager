@@ -23,8 +23,11 @@
 #include "permission_def.h"
 #include "permission_state_full.h"
 #include "policy_info.h"
+#define private public
 #include "sandbox_manager_client.h"
+#undef private
 #include "sandbox_manager_err_code.h"
+#include "sandbox_manager_load_callback.h"
 #include "sandbox_manager_log.h"
 #include "sandbox_manager_kit.h"
 #include "token_setproc.h"
@@ -629,6 +632,61 @@ HWTEST_F(SandboxManagerKitTest, PersistPolicy013, TestSize.Level1)
     EXPECT_EQ(POLICY_HAS_NOT_BEEN_PERSISTED, unPersistResult[1]);
     EXPECT_EQ(OPERATE_SUCCESSFULLY, unPersistResult[0]);
 }
+
+/**
+ * @tc.name: PersistPolicy014
+ * @tc.desc: PersistPolicy directory.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerKitTest, PersistPolicy014, TestSize.Level1)
+{
+    uint64_t tokenId = 0;
+    std::vector<PolicyInfo> policy;
+    std::vector<uint32_t> result;
+    uint64_t policyFlag = 0;
+    std::vector<bool> flag;
+    PolicyInfo infoParent = {
+        .path = "/data/log",
+        .mode = OperateMode::WRITE_MODE
+    };
+    EXPECT_EQ(INVALID_PARAMTER, SandboxManagerKit::PersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::UnPersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::SetPolicy(tokenId, policy, policyFlag));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::CheckPersistPolicy(tokenId, policy, flag));
+    tokenId = 1;
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::PersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::UnPersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::SetPolicy(tokenId, policy, policyFlag));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::CheckPersistPolicy(tokenId, policy, flag));
+
+    tokenId = 0;
+    policy.emplace_back(infoParent);
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::PersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::UnPersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::SetPolicy(tokenId, policy, policyFlag));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::CheckPersistPolicy(tokenId, policy, flag));
+    tokenId = 1;
+    EXPECT_NE(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::PersistPolicy(tokenId, policy, result));
+    EXPECT_NE(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::UnPersistPolicy(tokenId, policy, result));
+    EXPECT_NE(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::SetPolicy(tokenId, policy, policyFlag));
+    EXPECT_NE(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::CheckPersistPolicy(tokenId, policy, flag));
+
+    for (int i = 0; i < 500; i++) {
+        policy.emplace_back(infoParent);
+    }
+    tokenId = 0;
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::PersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::UnPersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::SetPolicy(tokenId, policy, policyFlag));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::CheckPersistPolicy(tokenId, policy, flag));
+    tokenId = 1;
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::PersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::UnPersistPolicy(tokenId, policy, result));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::SetPolicy(tokenId, policy, policyFlag));
+    EXPECT_EQ(SandboxManagerErrCode::INVALID_PARAMTER, SandboxManagerKit::CheckPersistPolicy(tokenId, policy, flag));
+}
+
 } //SandboxManager
 } //AccessControl
 } // OHOS

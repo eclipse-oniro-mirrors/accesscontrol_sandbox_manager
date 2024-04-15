@@ -113,6 +113,29 @@ HWTEST_F(SandboxManagerParcelTest, PolicyInfoParcel002, TestSize.Level1)
     EXPECT_EQ(g_info3.path, readedData->policyVector[2].path);
     EXPECT_EQ(g_info3.mode, readedData->policyVector[2].mode);
 }
+
+/**
+ * @tc.name: PolicyInfoParcel003
+ * @tc.desc: Test PolicyInfoVector Marshalling/Unmarshalling.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerParcelTest, PolicyInfoParcel003, TestSize.Level1)
+{
+    PolicyInfoVectorParcel policyInfoVectorParcel;
+    std::vector<PolicyInfo> policyVector;
+    for (int i = 0; i < 501; i++) {
+        policyVector.emplace_back(g_info1);
+    }
+    policyInfoVectorParcel.policyVector = policyVector;
+    Parcel parcel;
+    EXPECT_EQ(false, policyInfoVectorParcel.Marshalling(parcel));
+
+    parcel.WriteUint32(501);
+    std::shared_ptr<PolicyInfoParcel> readedData(PolicyInfoParcel::Unmarshalling(parcel));
+    EXPECT_EQ(nullptr, readedData);
+}
+
 } // SandboxManager
 } // AccessControl
 } // OHOS
