@@ -24,7 +24,9 @@
 #include "hap_token_info.h"
 #include "policy_field_const.h"
 #include "policy_info.h"
+#define private public
 #include "policy_info_manager.h"
+#undef private
 #include "sandbox_manager_const.h"
 #include "sandbox_manager_db.h"
 #include "sandbox_manager_log.h"
@@ -42,57 +44,11 @@ public:
     void SetUp();
     void TearDown();
     uint64_t selfTokenId_;
-    uint64_t sysGrantToken_;
 };
 
 static constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {
     LOG_CORE, ACCESSCONTROL_DOMAIN_SANDBOXMANAGER, "SandboxManagerDbTest"
 };
-
-Security::AccessToken::PermissionStateFull g_infoPermissionFull1 = {
-    .permissionName = DESKTOP_PERMISSION_NAME,
-    .isGeneral = true,
-    .resDeviceID = {"local5"},
-    .grantStatus = {Security::AccessToken::PermissionState::PERMISSION_GRANTED},
-    .grantFlags = {0},
-};
-
-Security::AccessToken::PermissionStateFull g_infoPermissionFull2 = {
-    .permissionName = DOCUMENT_PERMISSION_NAME,
-    .isGeneral = true,
-    .resDeviceID = {"local5"},
-    .grantStatus = {Security::AccessToken::PermissionState::PERMISSION_GRANTED},
-    .grantFlags = {0},
-};
-
-Security::AccessToken::PermissionStateFull g_infoPermissionFull3 = {
-    .permissionName = DOWNLOAD_PERMISSION_NAME,
-    .isGeneral = true,
-    .resDeviceID = {"local5"},
-    .grantStatus = {Security::AccessToken::PermissionState::PERMISSION_GRANTED},
-    .grantFlags = {0},
-};
-
-Security::AccessToken::HapInfoParams g_infoSysgrantParms = {
-    .userID = 1,
-    .bundleName = "sandboxManager_test",
-    .instIndex = 0,
-    .appIDDesc = "test1"
-};
-
-Security::AccessToken::HapPolicyParams g_hapPilictParams = {
-    .apl = Security::AccessToken::APL_NORMAL,
-    .domain = "test.domain1",
-    .permList = {},
-    .permStateList = {g_infoPermissionFull1, g_infoPermissionFull2, g_infoPermissionFull3},
-};
-
-uint64_t AllocTestToken()
-{
-    Security::AccessToken::AccessTokenIDEx tokenIdEx = {0};
-    tokenIdEx = Security::AccessToken::AccessTokenKit::AllocHapToken(g_infoSysgrantParms, g_hapPilictParams);
-    return tokenIdEx.tokenIdExStruct.tokenID;
-}
 
 void PolicyInfoManagerTest::SetUpTestCase(void)
 {
@@ -110,10 +66,7 @@ void PolicyInfoManagerTest::TearDownTestCase(void)
 
 void PolicyInfoManagerTest::SetUp(void)
 {
-    selfTokenId_ = 0; // 0 is test tokenid
-    SANDBOXMANAGER_LOG_DEBUG(LABEL, "selfTokenId_: %{public}lu", selfTokenId_);
-    sysGrantToken_ = AllocTestToken();
-    SANDBOXMANAGER_LOG_DEBUG(LABEL, "sysGrantToken_: %{public}lu", sysGrantToken_);
+    selfTokenId_ = 0;
 }
 
 void PolicyInfoManagerTest::TearDown(void)
@@ -425,6 +378,60 @@ HWTEST_F(PolicyInfoManagerTest, PolicyInfoManagerTest006, TestSize.Level1)
 }
 
 /**
+ * @tc.name: PolicyInfoManagerTest007
+ * @tc.desc: Test RemoveBundlePolicy
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyInfoManagerTest, PolicyInfoManagerTest007, TestSize.Level1)
+{
+    PolicyInfo searchPolicy {
+        .path = "/test/",
+        .mode = 0b01,
+    };
+    PolicyInfo referPolicy {
+        .path = "/testa/testb",
+        .mode = 0b01,
+    };
+    int64_t searchDepth = PolicyInfoManager::GetInstance().GetDepth(searchPolicy.path);
+    int64_t referDepth = PolicyInfoManager::GetInstance().GetDepth(referPolicy.path);
+    ASSERT_TRUE(searchDepth < referDepth);
+
+    EXPECT_FALSE(PolicyInfoManager::GetInstance().IsPolicyMatch(
+        searchPolicy, searchDepth, referPolicy, referDepth));
+}
+
+/**
+ * @tc.name: PolicyInfoManagerTest011
+ * @tc.desc: Test MatchSinglePolicy
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyInfoManagerTest, PolicyInfoManagerTest011, TestSize.Level1)
+{
+    PolicyInfo err1 {
+        .path = "",
+        .mode = 0b10,
+    };
+    PolicyInfo err2 {
+        .path = std::string(POLICY_PATH_LIMIT + 1, '0'),
+        .mode = 0b11,
+    };
+    PolicyInfo err3 {
+        .path = "test",
+        .mode = 0xff,
+    };
+    PolicyInfo err4 {
+        .path = "test",
+        .mode = 0b00,
+    };
+    EXPECT_EQ(SandboxRetType::INVALID_PATH, PolicyInfoManager::GetInstance().CheckPolicyValidity(err1));
+    EXPECT_EQ(SandboxRetType::INVALID_PATH, PolicyInfoManager::GetInstance().CheckPolicyValidity(err2));
+    EXPECT_EQ(SandboxRetType::INVALID_MODE, PolicyInfoManager::GetInstance().CheckPolicyValidity(err3));
+    EXPECT_EQ(SandboxRetType::INVALID_MODE, PolicyInfoManager::GetInstance().CheckPolicyValidity(err4));
+}
+
+/**
  * @tc.name: GenericValuesTest001
  * @tc.desc: Test generic_values.cpp
  * @tc.type: FUNC
@@ -449,7 +456,6 @@ HWTEST_F(PolicyInfoManagerTest, GenericValuesTest001, TestSize.Level1)
     std::string str;
     EXPECT_EQ(str, variantValue.GetString());
 }
-
 } // SandboxManager
 } // AccessControl
 } // OHOS

@@ -19,7 +19,9 @@
 #include <vector>
 #include "generic_values.h"
 #include "policy_field_const.h"
+#define private public
 #include "sandbox_manager_db.h"
+#undef private
 #include "sandbox_manager_log.h"
 
 
@@ -293,8 +295,81 @@ HWTEST_F(SandboxManagerDbTest, SandboxManagerDbTest006, TestSize.Level1)
     EXPECT_EQ(-1, SandboxManagerDb::GetInstance().RollbackTransaction());
     EXPECT_EQ(-1, SandboxManagerDb::GetInstance().ExecuteSql(sql));
     SandboxManagerDb::GetInstance().SpitError();
+    SandboxManagerDb::GetInstance().Open(); // recover
 }
 
+/**
+ * @tc.name: SandboxManagerDbTest007
+ * @tc.desc: Test when dataTypeToSqlTable_ nopt found
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerDbTest, SandboxManagerDbTest007, TestSize.Level1)
+{
+    std::map<SandboxManagerDb::DataType, SandboxManagerDb::SqliteTable> oldTable =
+        SandboxManagerDb::GetInstance().dataTypeToSqlTable_;
+    SandboxManagerDb::GetInstance().dataTypeToSqlTable_ = {};
+    EXPECT_EQ(SandboxManagerDb::FAILURE, SandboxManagerDb::GetInstance().CreatePersistedPolicyTable());
+    std::vector<std::string> column;
+    GenericValues symbol;
+    std::string ret = SandboxManagerDb::GetInstance().CreateSelectPrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY, column, symbol);
+    EXPECT_TRUE(ret.empty());
+
+    std::vector<std::string> conditionColumns;
+    std::vector<std::string> modifyColumns;
+    modifyColumns.emplace_back("test");
+    ret = SandboxManagerDb::GetInstance().CreateUpdatePrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY, modifyColumns, conditionColumns);
+    EXPECT_TRUE(ret.empty());
+
+    ret = SandboxManagerDb::GetInstance().CreateDeletePrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY, conditionColumns);
+    EXPECT_TRUE(ret.empty());
+
+    ret = SandboxManagerDb::GetInstance().CreateInsertPrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY);
+    EXPECT_TRUE(ret.empty());
+    SandboxManagerDb::GetInstance().dataTypeToSqlTable_ = oldTable;
+}
+
+/**
+ * @tc.name: SandboxManagerDbTest008
+ * @tc.desc: Test when dataTypeToSqlTable_ nopt found
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerDbTest, SandboxManagerDbTest008, TestSize.Level1)
+{
+    std::vector<std::string> column = {"test"}; // this is a test
+    GenericValues symbol;
+    symbol.Put("test", ">"); // unrecognize symbol
+    std::string ret = SandboxManagerDb::GetInstance().CreateSelectPrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY, column, symbol);
+    EXPECT_TRUE(ret.empty());
+}
+
+/**
+ * @tc.name: SandboxManagerDbTest009
+ * @tc.desc: Test when dataTypeToSqlTable_ nopt found
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerDbTest, SandboxManagerDbTest009, TestSize.Level1)
+{
+    std::vector<std::string> modifyColumns;
+    std::vector<std::string> conditionColumns;
+    std::string ret = SandboxManagerDb::GetInstance().CreateUpdatePrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY, modifyColumns, conditionColumns);
+    EXPECT_TRUE(ret.empty());
+
+    modifyColumns.emplace_back("test0");
+    modifyColumns.emplace_back("test1");
+    ret = SandboxManagerDb::GetInstance().CreateUpdatePrepareSqlCmd(
+        SandboxManagerDb::SANDBOX_MANAGER_PERSISTED_POLICY, modifyColumns, conditionColumns);
+    std::string ok = "update persisted_policy_table set test0=:test0,test1=:test1";
+    EXPECT_EQ(ok, ret);
+}
 } // SandboxManager
 } // AccessControl
 } // OHOS

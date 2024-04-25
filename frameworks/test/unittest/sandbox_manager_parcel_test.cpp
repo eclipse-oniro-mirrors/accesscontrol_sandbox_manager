@@ -136,6 +136,21 @@ HWTEST_F(SandboxManagerParcelTest, PolicyInfoParcel003, TestSize.Level1)
     EXPECT_EQ(nullptr, readedData);
 }
 
+/**
+ * @tc.name: PolicyInfoParcel004
+ * @tc.desc: Test PolicyInfoVector Marshalling/Unmarshalling, larger than max size
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerParcelTest, PolicyInfoParcel004, TestSize.Level1)
+{
+    Parcel parcel;
+    uint32_t maxSize = 500; // 500 is max
+    EXPECT_EQ(true, parcel.WriteUint32(maxSize + 1));
+
+    std::shared_ptr<PolicyInfoVectorParcel> readedData(PolicyInfoVectorParcel::Unmarshalling(parcel));
+    ASSERT_EQ(nullptr, readedData);
+}
 } // SandboxManager
 } // AccessControl
 } // OHOS
