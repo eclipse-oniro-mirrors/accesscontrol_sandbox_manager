@@ -128,19 +128,6 @@ private:
      * @return INVALID_PATH / INVALID_MODE / SANDBOX_MANAGER_OK
      */
     int32_t CheckPolicyValidity(const PolicyInfo &policy);
-    /**
-     * @brief check path whether is sys-granted
-     * @param path input path
-     * @return true / false
-     */
-    bool CheckSystemGranted(const uint64_t tokenId, const std::string &path);
-    /**
-     * @brief logic to judge sys-granted path,
-     *      sys-granted path should begin with "/sys_grant", for test
-     * @param path input path
-     * @return true / false
-     */
-    std::string GetPermissionByCorrespondingPath(const std::string &path);
 };
 } // namespace SandboxManager
 } // namespace AccessControl

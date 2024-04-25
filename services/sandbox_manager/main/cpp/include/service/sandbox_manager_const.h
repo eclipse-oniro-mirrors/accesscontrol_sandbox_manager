@@ -31,14 +31,6 @@ const std::string SET_POLICY_PERMISSION_NAME = "ohos.permission.SET_SANDBOX_POLI
 const std::string ACCESS_PERSIST_PERMISSION_NAME = "ohos.permission.FILE_ACCESS_PERSIST";
 
 const uint32_t POLICY_VECTOR_SIZE_LIMIT = 500;
-
-const std::string DESKTOP_PATH = "/storage/Users/currentUser/Desktop";
-const std::string DOWNLOAD_PATH = "/storage/Users/currentUser/Download";
-const std::string DOCUMENT_PATH = "/storage/Users/currentUser/Documents";
-const std::string DESKTOP_PERMISSION_NAME = "ohos.permission.READ_WRITE_DESKTOP_DIRECTORY";
-const std::string DOWNLOAD_PERMISSION_NAME = "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY";
-const std::string DOCUMENT_PERMISSION_NAME = "ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY";
-
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS

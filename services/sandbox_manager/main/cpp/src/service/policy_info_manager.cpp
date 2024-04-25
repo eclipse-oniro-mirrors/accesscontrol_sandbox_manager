@@ -62,11 +62,6 @@ int32_t PolicyInfoManager::AddPolicy(const uint64_t tokenId, const std::vector<P
             result[i] = checkPolicyRet;
             continue;
         }
-        if (CheckSystemGranted(tokenId, policy[i].path)) {
-            result[i] = SandboxRetType::OPERATE_SUCCESSFULLY;
-            continue;
-        }
-
         // find duplicate record (have same tokenId, path), delete it
         PolicyInfo findresult;
         int32_t exactFindRet = ExactFind(tokenId, policy[i], findresult);
@@ -101,10 +96,6 @@ int32_t PolicyInfoManager::MatchSinglePolicy(const uint64_t tokenId, const Polic
     if (checkPolicyRet != SANDBOX_MANAGER_OK) {
         result = checkPolicyRet;
         return INVALID_PARAMTER;
-    }
-    if (CheckSystemGranted(tokenId, policy.path)) {
-        result = SandboxRetType::OPERATE_SUCCESSFULLY;
-        return SANDBOX_MANAGER_OK;
     }
 
     // search records have same tokenId and depth <= input policy
@@ -182,10 +173,6 @@ int32_t PolicyInfoManager::RemovePolicy(
         int32_t checkPolicyRet = CheckPolicyValidity(policy[i]);
         if (checkPolicyRet != SANDBOX_MANAGER_OK) {
             result[i] = checkPolicyRet;
-            continue;
-        }
-        if (CheckSystemGranted(tokenId, policy[i].path)) {
-            result[i] = SandboxRetType::OPERATE_SUCCESSFULLY;
             continue;
         }
         
@@ -331,37 +318,6 @@ int32_t PolicyInfoManager::CheckPolicyValidity(const PolicyInfo &policy)
         return SandboxRetType::INVALID_MODE;
     }
     return SANDBOX_MANAGER_OK;
-}
-
-bool PolicyInfoManager::CheckSystemGranted(const uint64_t tokenId, const std::string &path)
-{
-    std::string permissionName = GetPermissionByCorrespondingPath(path);
-    if (permissionName.empty()) {
-        return false;
-    }
-
-    uint32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
-    if (ret == Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-        return true;
-    } else {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "Not granted: %{public}s", path.c_str());
-        return false;
-    }
-}
-
-std::string PolicyInfoManager::GetPermissionByCorrespondingPath(const std::string &path)
-{
-    std::string inputPath = AdjustPath(path);
-    if (inputPath.substr(0, DESKTOP_PATH.length()) == DESKTOP_PATH) {
-        return DESKTOP_PERMISSION_NAME;
-    }
-    if (inputPath.substr(0, DOWNLOAD_PATH.length()) == DOWNLOAD_PATH) {
-        return DOWNLOAD_PERMISSION_NAME;
-    }
-    if (inputPath.substr(0, DOCUMENT_PATH.length()) == DOCUMENT_PATH) {
-        return DOCUMENT_PERMISSION_NAME;
-    }
-    return std::string();
 }
 } // namespace SandboxManager
 } // namespace AccessControl

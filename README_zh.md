@@ -39,14 +39,14 @@
 
 | **接口申明** | **接口描述** |
 | --- | --- |
-| int32_t PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result); | 添加调用者持久化规则 |
-| int32_t UnPersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result); | 删除调用者持久化规则 |
-| int32_t PersistPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);| 添加指定tokenId的持久化规则 |
-| int32_t UnPersistPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);| 删除指定tokenId的持久化规则 |
-| int32_t SetPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, uint64_t policyFlag); | 设置临时规则 |
-|int32_t StartAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);| 激活持久化规则 |
-|int32_t StopAccessingPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result);| 取消激活持久化规则 |
-|int32_t CheckPersistPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<bool> &result);| 校验规则是否已持久化 |
+| int32_t PersistPolicy(const std::vector\<PolicyInfo\> &policy, std::vector<uint32_t> &result); | 添加调用者持久化规则 |
+| int32_t UnPersistPolicy(const std::vector\<PolicyInfo\> &policy, std::vector<uint32_t> &result); | 删除调用者持久化规则 |
+| int32_t PersistPolicy(uint64_t tokenId, const std::vector\<PolicyInfo\> &policy, std::vector<uint32_t> &result);| 添加指定tokenId的持久化规则 |
+| int32_t UnPersistPolicy(uint64_t tokenId, const std::vector\<PolicyInfo\> &policy, std::vector<uint32_t> &result);| 删除指定tokenId的持久化规则 |
+| int32_t SetPolicy(uint64_t tokenId, const std::vector\<PolicyInfo\> &policy, uint64_t policyFlag); | 设置临时规则 |
+|int32_t StartAccessingPolicy(const std::vector\<PolicyInfo\> &policy, std::vector<uint32_t> &result);| 激活持久化规则 |
+|int32_t StopAccessingPolicy(const std::vector\<PolicyInfo\> &policy, std::vector<uint32_t> &result);| 取消激活持久化规则 |
+|int32_t CheckPersistPolicy(uint64_t tokenId, const std::vector\<PolicyInfo\> &policy, std::vector<bool> &result);| 校验规则是否已持久化 |
 
 ### 限制与约束
 1、SetPolicy接口调用者须具有ohos.permission.SET_SANDBOX_POLICY权限，权限定义详见access_token仓
