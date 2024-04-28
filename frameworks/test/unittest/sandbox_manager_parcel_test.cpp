@@ -78,7 +78,7 @@ HWTEST_F(SandboxManagerParcelTest, PolicyInfoParcel001, TestSize.Level1)
     EXPECT_EQ(true, policyInfoParcel.Marshalling(parcel));
 
     std::shared_ptr<PolicyInfoParcel> readedData(PolicyInfoParcel::Unmarshalling(parcel));
-    EXPECT_NE(nullptr, readedData);
+    ASSERT_NE(nullptr, readedData);
 
     EXPECT_EQ(g_info1.path, readedData->policyInfo.path);
     EXPECT_EQ(g_info1.mode, readedData->policyInfo.mode);
@@ -104,7 +104,7 @@ HWTEST_F(SandboxManagerParcelTest, PolicyInfoParcel002, TestSize.Level1)
     EXPECT_EQ(true, policyInfoVectorParcel.Marshalling(parcel));
 
     std::shared_ptr<PolicyInfoVectorParcel> readedData(PolicyInfoVectorParcel::Unmarshalling(parcel));
-    EXPECT_NE(nullptr, readedData);
+    ASSERT_NE(nullptr, readedData);
 
     EXPECT_EQ(g_info1.path, readedData->policyVector[0].path);
     EXPECT_EQ(g_info1.mode, readedData->policyVector[0].mode);

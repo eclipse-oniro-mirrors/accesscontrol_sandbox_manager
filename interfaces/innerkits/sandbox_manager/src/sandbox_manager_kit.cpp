@@ -37,6 +37,7 @@ int32_t SandboxManagerKit::PersistPolicy(const std::vector<PolicyInfo> &policy, 
         SANDBOXMANAGER_LOG_ERROR(LABEL, "policySize = %{public}u", static_cast<uint32_t>(policySize));
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().PersistPolicy(policy, result);
 }
 
@@ -48,6 +49,7 @@ int32_t SandboxManagerKit::UnPersistPolicy(const std::vector<PolicyInfo> &policy
         SANDBOXMANAGER_LOG_ERROR(LABEL, "policySize = %{public}u", static_cast<uint32_t>(policySize));
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().UnPersistPolicy(policy, result);
 }
 
@@ -61,6 +63,7 @@ int32_t SandboxManagerKit::PersistPolicy(
             static_cast<uint32_t>(policySize), tokenId);
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().PersistPolicyByTokenId(tokenId, policy, result);
 }
 
@@ -74,6 +77,7 @@ int32_t SandboxManagerKit::UnPersistPolicy(
             static_cast<uint32_t>(policySize), tokenId);
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().UnPersistPolicyByTokenId(tokenId, policy, result);
 }
 
@@ -95,6 +99,7 @@ int32_t SandboxManagerKit::StartAccessingPolicy(const std::vector<PolicyInfo> &p
         SANDBOXMANAGER_LOG_ERROR(LABEL, "policySize = %{public}u", static_cast<uint32_t>(policySize));
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().StartAccessingPolicy(policy, result);
 }
 
@@ -106,6 +111,7 @@ int32_t SandboxManagerKit::StopAccessingPolicy(const std::vector<PolicyInfo> &po
         SANDBOXMANAGER_LOG_ERROR(LABEL, "policySize = %{public}u", static_cast<uint32_t>(policySize));
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().StopAccessingPolicy(policy, result);
 }
 
@@ -114,10 +120,11 @@ int32_t SandboxManagerKit::CheckPersistPolicy(
 {
     SANDBOXMANAGER_LOG_DEBUG(LABEL, "called");
     size_t policySize = policy.size();
-    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT || tokenId == 0) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "policySize = %{public}u", static_cast<uint32_t>(policySize));
         return SandboxManagerErrCode::INVALID_PARAMTER;
     }
+    result.clear();
     return SandboxManagerClient::GetInstance().CheckPersistPolicy(tokenId, policy, result);
 }
 } // SandboxManager

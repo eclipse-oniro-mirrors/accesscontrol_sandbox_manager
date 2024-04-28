@@ -17,7 +17,7 @@ import("../../../sandbox_manager.gni")
 sandbox_manager_service_src = [
   "../main/cpp/src/service/sandbox_manager_service.cpp",
   "../main/cpp/src/service/sandbox_manager_stub.cpp",
-  "../main/cpp/src/service/package_uninstall_observer.cpp",
+  "../main/cpp/src/sensitive/sandbox_manager_event_subscriber.cpp",
   "../main/cpp/src/service/policy_info_manager.cpp",
   "../main/cpp/src/database/policy_field_const.cpp",
   "../main/cpp/src/database/sandbox_manager_db.cpp",
@@ -40,6 +40,7 @@ ohos_unittest("libsandbox_manager_service_standard_test") {
     "${sandbox_manager_path}/frameworks/common/include",
     "${sandbox_manager_path}/services/common/database/include",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/database",
+    "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/sensitive",
     "${sandbox_manager_path}/services/sandbox_manager/main/cpp/include/service",
   ]
 
@@ -49,6 +50,8 @@ ohos_unittest("libsandbox_manager_service_standard_test") {
     "unittest/sandbox_manager_service_test.cpp",
   ]
   sources += sandbox_manager_service_src
+
+  configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
 
   cflags_cc = [ "-DHILOG_ENABLE" ]
 

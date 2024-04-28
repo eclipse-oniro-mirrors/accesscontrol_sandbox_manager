@@ -9,6 +9,12 @@
 		"start-on-demand": {
 			"commonevent": [{
 				"name": "usual.event.BOOT_COMPLETED"
+			},
+			{
+				"name": "usual.event.PACKAGE_REMOVED"
+			},
+			{
+				"name": "usual.event.PACKAGE_FULLY_REMOVED"
 			}]
 		}
 	}]

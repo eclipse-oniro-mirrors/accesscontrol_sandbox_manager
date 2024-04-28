@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +24,7 @@
 #include "sandbox_manager_const.h"
 #include "sandbox_manager_db.h"
 #include "sandbox_manager_err_code.h"
+#include "sandbox_manager_event_subscriber.h"
 #define private public
 #include "sandbox_manager_service.h"
 #undef private
@@ -42,7 +43,7 @@ public:
     void TearDown();
     void GetTokenid();
     std::shared_ptr<SandboxManagerService> sandboxManagerService_;
-    uint64_t selfTokenId_;
+    uint64_t selfTokenId_ = 1; // test token
     uint64_t sysGrantToken_;
 };
 
@@ -112,6 +113,7 @@ HWTEST_F(SandboxManagerServiceTest, SandboxManagerServiceTest002, TestSize.Level
     EXPECT_EQ(SANDBOX_MANAGER_OK, sandboxManagerService_->SetPolicy(selfTokenId_, policy, policyFlag));
     policyFlag = 1;
     EXPECT_EQ(SANDBOX_MANAGER_OK, sandboxManagerService_->SetPolicy(selfTokenId_, policy, policyFlag));
+    EXPECT_EQ(INVALID_PARAMTER, sandboxManagerService_->SetPolicy(0, policy, policyFlag));
 }
 
 /**
@@ -176,6 +178,10 @@ HWTEST_F(SandboxManagerServiceTest, SandboxManagerServiceTest005, TestSize.Level
     EXPECT_EQ(INVALID_PARAMTER, sandboxManagerService_->CheckPersistPolicy(selfTokenId_, policy, result1));
     sizeLimit = 0;
     EXPECT_EQ(sizeLimit, result1.size());
+
+    policy.resize(0);
+    std::vector<bool> result2;
+    EXPECT_EQ(INVALID_PARAMTER, sandboxManagerService_->CheckPersistPolicy(0, policy, result2));
 }
 
 /**
@@ -261,8 +267,57 @@ HWTEST_F(SandboxManagerServiceTest, SandboxManagerServiceTest009, TestSize.Level
     EXPECT_EQ(SANDBOX_MANAGER_OK, sandboxManagerService_->StopAccessingPolicy(policy, result));
  
     std::vector<bool> result1;
-    uint64_t tokenId = 0;
-    EXPECT_EQ(SANDBOX_MANAGER_OK, sandboxManagerService_->CheckPersistPolicy(tokenId, policy, result1));
+    EXPECT_EQ(SANDBOX_MANAGER_OK, sandboxManagerService_->CheckPersistPolicy(selfTokenId_, policy, result1));
+}
+
+/**
+ * @tc.name: SandboxManagerServiceTest010
+ * @tc.desc: Test StartByEventAction
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerServiceTest, SandboxManagerServiceTest010, TestSize.Level1)
+{
+    ASSERT_TRUE(sandboxManagerService_->Initialize());
+    sandboxManagerService_->OnAddSystemAbility(COMMON_EVENT_SERVICE_ID, "test");
+    sandboxManagerService_->OnAddSystemAbility(0, "test");
+    SystemAbilityOnDemandReason startReason;
+    startReason.SetName("test");
+    EXPECT_TRUE(sandboxManagerService_->StartByEventAction(startReason));
+    startReason.SetName(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
+    std::map<std::string, std::string> want = {{"testKey", "testVal"}}; // test input
+    OnDemandReasonExtraData extraData1(0, "test", want);
+    startReason.SetExtraData(extraData1);
+    // accessTokenId not found
+    EXPECT_FALSE(sandboxManagerService_->StartByEventAction(startReason));
+    // accessTokenId is empty
+    want = {{"accessTokenId", ""}};
+    OnDemandReasonExtraData extraData2(0, "test", want);
+    startReason.SetExtraData(extraData2);
+    EXPECT_FALSE(sandboxManagerService_->StartByEventAction(startReason));
+    // accessTokenId all text
+    want = {{"accessTokenId", "test"}}; // this is a test input
+    OnDemandReasonExtraData extraData3(0, "test", want);
+    startReason.SetExtraData(extraData3);
+    EXPECT_FALSE(sandboxManagerService_->StartByEventAction(startReason));
+    // accessTokenId first char is digit
+    want = {{"accessTokenId", "0test"}}; // this is a test input
+    OnDemandReasonExtraData extraData4(0, "test", want);
+    startReason.SetExtraData(extraData4);
+    EXPECT_FALSE(sandboxManagerService_->StartByEventAction(startReason));
+    // accessTokenId is 0
+    want = {{"accessTokenId", "0"}};
+    OnDemandReasonExtraData extraData5(0, "test", want);
+    startReason.SetExtraData(extraData5);
+    EXPECT_FALSE(sandboxManagerService_->StartByEventAction(startReason));
+    // normal call
+    want = {{"accessTokenId", "1"}};
+    OnDemandReasonExtraData extraData6(0, "test", want);
+    startReason.SetExtraData(extraData6);
+    EXPECT_TRUE(sandboxManagerService_->StartByEventAction(startReason));
+
+    startReason.SetName(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_FULLY_REMOVED);
+    EXPECT_TRUE(sandboxManagerService_->StartByEventAction(startReason));
 }
 
 /**

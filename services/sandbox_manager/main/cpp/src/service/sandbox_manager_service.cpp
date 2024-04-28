@@ -15,15 +15,17 @@
 
 #include "sandbox_manager_service.h"
 
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include "accesstoken_kit.h"
+#include "common_event_support.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
-#include "package_uninstall_observer.h"
 #include "policy_info_manager.h"
 #include "sandbox_manager_const.h"
 #include "sandbox_manager_err_code.h"
+#include "sandbox_manager_event_subscriber.h"
 #include "sandbox_manager_log.h"
 #include "system_ability_definition.h"
 
@@ -60,28 +62,67 @@ SandboxManagerService::~SandboxManagerService()
 
 void SandboxManagerService::OnStart()
 {
-    if (state_ == ServiceRunningState::STATE_RUNNING) {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService has already started!");
-        return;
+    {
+        std::lock_guard<std::mutex> lock(stateMutex_);
+        if (state_ == ServiceRunningState::STATE_RUNNING) {
+            SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService has already started.");
+            return;
+        }
+        if (!Initialize()) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Initialize failed.");
+            return;
+        }
+        state_ = ServiceRunningState::STATE_RUNNING;
+        SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService is starting.");
     }
-    SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService is starting");
-    if (!Initialize()) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to initialize ");
-        return;
-    }
-    state_ = ServiceRunningState::STATE_RUNNING;
     bool ret = Publish(DelayedSingleton<SandboxManagerService>::GetInstance().get());
     if (!ret) {
         SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to publish service! ");
         return;
     }
-    SANDBOXMANAGER_LOG_INFO(LABEL, "Congratulations, SandboxManagerService start successfully!");
+    SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService start successful.");
 }
 
 void SandboxManagerService::OnStop()
 {
-    SANDBOXMANAGER_LOG_INFO(LABEL, "stop sandbox manager service");
-    state_ = ServiceRunningState::STATE_NOT_START;
+    SANDBOXMANAGER_LOG_INFO(LABEL, "Stop sandbox manager service.");
+    {
+        std::lock_guard<std::mutex> lock(stateMutex_);
+        if (state_ == ServiceRunningState::STATE_NOT_START) {
+            SANDBOXMANAGER_LOG_INFO(LABEL, "Sandbox manager service has stopped.");
+            return;
+        }
+        state_ = ServiceRunningState::STATE_NOT_START;
+        SandboxManagerCommonEventSubscriber::UnRegisterEvent();
+    }
+}
+
+void SandboxManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
+{
+    SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService started by event.");
+    {
+        std::lock_guard<std::mutex> lock(stateMutex_);
+        if (state_ == ServiceRunningState::STATE_RUNNING) {
+            // Concurrent startup, if sa is running, do event action
+            SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService has already started.");
+            StartByEventAction(startReason);
+            return;
+        }
+        if (!Initialize()) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to initialize ");
+            return;
+        }
+        state_ = ServiceRunningState::STATE_RUNNING;
+        SANDBOXMANAGER_LOG_INFO(LABEL, "SandboxManagerService is starting.");
+        // If service is running, event action is completed by CommonEventSubscriber
+        // Process event action
+        StartByEventAction(startReason);
+    }
+    bool ret = Publish(DelayedSingleton<SandboxManagerService>::GetInstance().get());
+    if (!ret) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to publish service.");
+        return;
+    }
 }
 
 int32_t SandboxManagerService::PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result)
@@ -89,7 +130,7 @@ int32_t SandboxManagerService::PersistPolicy(const std::vector<PolicyInfo> &poli
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     size_t policySize = policy.size();
     if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Policy vector size error, size = %{public}lu.", policy.size());
         return INVALID_PARAMTER;
     }
     result.resize(policySize);
@@ -102,7 +143,7 @@ int32_t SandboxManagerService::UnPersistPolicy(
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     size_t policySize = policy.size();
     if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Policy vector size error, size =  %{public}lu.", policy.size());
         return INVALID_PARAMTER;
     }
 
@@ -116,7 +157,8 @@ int32_t SandboxManagerService::PersistPolicyByTokenId(
     size_t policySize = policy.size();
     if ((policySize == 0) || (policySize > POLICY_VECTOR_SIZE_LIMIT) || (tokenId == 0)) {
         SANDBOXMANAGER_LOG_ERROR(
-            LABEL, "policy vector size error: %{public}lu, tokenid is %{public}lu", policy.size(), tokenId);
+            LABEL, "Policy vector size error or invalid tokenid, size = %{public}lu, tokenid = %{public}lu",
+            policy.size(), tokenId);
         return INVALID_PARAMTER;
     }
     result.resize(policySize);
@@ -129,7 +171,8 @@ int32_t SandboxManagerService::UnPersistPolicyByTokenId(
     size_t policySize = policy.size();
     if ((policySize == 0) || (policySize > POLICY_VECTOR_SIZE_LIMIT) || (tokenId == 0)) {
         SANDBOXMANAGER_LOG_ERROR(
-            LABEL, "policy vector size error: %{public}lu, tokenid is %{public}lu", policy.size(), tokenId);
+            LABEL, "Policy vector size error or invalid tokenid, size = %{public}lu, tokenid = %{public}lu",
+            policy.size(), tokenId);
         return INVALID_PARAMTER;
     }
 
@@ -140,15 +183,16 @@ int32_t SandboxManagerService::UnPersistPolicyByTokenId(
 int32_t SandboxManagerService::SetPolicy(uint64_t tokenId, const std::vector<PolicyInfo> &policy, uint64_t policyFlag)
 {
     size_t policySize = policy.size();
-    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT || tokenId == 0) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Policy vector size error, size = %{public}lu, tokenid = %{public}lu",
+            policy.size(), tokenId);
         return INVALID_PARAMTER;
     }
 
     if (policyFlag == IS_POLICY_ALLOWED_TO_BE_PRESISTED) {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "Allow to set persistant");
+        SANDBOXMANAGER_LOG_INFO(LABEL, "Allow to set persistant.");
     } else {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "NOT allow to set persistant");
+        SANDBOXMANAGER_LOG_INFO(LABEL, "Not allow to set persistant.");
     }
     // set to Mac here, FORBIDDEN_TO_BE_PERSISTED
     return SANDBOX_MANAGER_OK;
@@ -160,7 +204,7 @@ int32_t SandboxManagerService::StartAccessingPolicy(
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     size_t policySize = policy.size();
     if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Policy vector size error, size = %{public}lu", policy.size());
         return INVALID_PARAMTER;
     }
 
@@ -182,7 +226,7 @@ int32_t SandboxManagerService::StopAccessingPolicy(
     uint64_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     size_t policySize = policy.size();
     if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Policy vector size error, size = %{public}lu", policy.size());
         return INVALID_PARAMTER;
     }
 
@@ -201,8 +245,9 @@ int32_t SandboxManagerService::CheckPersistPolicy(
     uint64_t tokenId, const std::vector<PolicyInfo> &policy, std::vector<bool> &result)
 {
     size_t policySize = policy.size();
-    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "policy vector size error: %{public}lu", policy.size());
+    if (policySize == 0 || policySize > POLICY_VECTOR_SIZE_LIMIT || tokenId == 0) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Policy vector size error, size = %{public}lu, tokenid = %{public}lu",
+            policy.size(), tokenId);
         return INVALID_PARAMTER;
     }
 
@@ -222,24 +267,16 @@ int32_t SandboxManagerService::CheckPersistPolicy(
 bool SandboxManagerService::Initialize()
 {
     DelayUnloadService();
-    SubscribeUninstallEvent();
     PolicyInfoManager::GetInstance().Init();
+    AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
     return true;
 }
 
-void SandboxManagerService::SubscribeUninstallEvent()
+void SandboxManagerService::OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    EventFwk::MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
-    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_FULLY_REMOVED);
-    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    auto pkgUninstallObserver = std::make_shared<PkgUninstallObserver>(subscribeInfo);
-    if (EventFwk::CommonEventManager::SubscribeCommonEvent(pkgUninstallObserver)) {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "regist common event");
-    } else {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "regist common event error");
+    if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
+        SandboxManagerCommonEventSubscriber::RegisterEvent();
     }
-    return;
 }
 
 void SandboxManagerService::DelayUnloadService()
@@ -253,17 +290,55 @@ void SandboxManagerService::DelayUnloadService()
     auto task = [this]() {
         auto samgrProxy = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         if (samgrProxy == nullptr) {
-            SANDBOXMANAGER_LOG_ERROR(LABEL, "get samgr failed");
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Get samgr failed.");
             return;
         }
         int32_t ret = samgrProxy->UnloadSystemAbility(SA_ID_SANDBOX_MANAGER_SERVICE);
         if (ret != ERR_OK) {
-            SANDBOXMANAGER_LOG_ERROR(LABEL, "unload system ability failed");
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Unload system ability failed.");
             return;
         }
     };
     unloadHandler_->RemoveTask("SandboxManagerUnload");
     unloadHandler_->PostTask(task, "SandboxManagerUnload", SA_LIFE_TIME);
+}
+
+bool SandboxManagerService::StartByEventAction(const SystemAbilityOnDemandReason& startReason)
+{
+    std::string reasonName = startReason.GetName();
+    SANDBOXMANAGER_LOG_INFO(LABEL, "Start by common event, event = %{public}s.", reasonName.c_str());
+    if (reasonName == EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
+        reasonName == EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_FULLY_REMOVED) {
+        auto wantMap = startReason.GetExtraData().GetWant();
+        auto iter = startReason.GetExtraData().GetWant().find("accessTokenId");
+        if (iter == startReason.GetExtraData().GetWant().end()) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Extradata search tokenid failed.");
+            return false;
+        }
+        std::string strTokenID = iter->second;
+        // strTokenID[0] must be digit, otherwise stoull would crash
+        if (strTokenID.empty()) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Error empty token received.");
+            return false;
+        }
+        if (std::isdigit(strTokenID[0]) == 0) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Invalid digit token string received.");
+            return false;
+        }
+        size_t idx = 0;
+        uint64_t tokenId = std::stoull(strTokenID, &idx);
+        if (idx != strTokenID.length()) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Convert failed, tokenId = %{public}s.", strTokenID.c_str());
+            return false;
+        }
+        if (tokenId == 0) {
+            SANDBOXMANAGER_LOG_ERROR(LABEL, "Receive invalid tokenId.");
+            return false;
+        }
+        PolicyInfoManager::GetInstance().RemoveBundlePolicy(tokenId);
+        SANDBOXMANAGER_LOG_INFO(LABEL, "RemovebundlePolicy, tokenID = %{public}lu.", tokenId);
+    }
+    return true;
 }
 } // namespace SandboxManager
 } // namespace AccessControl

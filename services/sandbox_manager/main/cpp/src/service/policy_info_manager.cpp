@@ -289,11 +289,10 @@ bool PolicyInfoManager::IsPolicyMatch(const PolicyInfo &searchPolicy, const uint
     if (searchDepth == referDepth) {
         // if depth equal, path should be strict equal
         pathMatch = (searchPolicy.path == referPolicy.path);
-    } else if (searchDepth > referDepth) {
+    } else if (searchDepth > referDepth && referPolicy.path.length() <= searchPolicy.path.length()) {
         // if depth not equal, searchPath should startwith referPath
         std::string referPath = referPolicy.path + "/";
-        int32_t idx = searchPolicy.path.rfind(referPath);
-        pathMatch = (idx == 0);
+        pathMatch = (searchPolicy.path.substr(0, referPath.length()) == referPath);
     } else {
         // searchDepth < referDepth, wrong input, return false
         return false;
@@ -353,13 +352,13 @@ bool PolicyInfoManager::CheckSystemGranted(const uint64_t tokenId, const std::st
 std::string PolicyInfoManager::GetPermissionByCorrespondingPath(const std::string &path)
 {
     std::string inputPath = AdjustPath(path);
-    if (inputPath.rfind(DESKTOP_PATH) == 0) {
+    if (inputPath.substr(0, DESKTOP_PATH.length()) == DESKTOP_PATH) {
         return DESKTOP_PERMISSION_NAME;
     }
-    if (inputPath.rfind(DOWNLOAD_PATH) == 0) {
+    if (inputPath.substr(0, DOWNLOAD_PATH.length()) == DOWNLOAD_PATH) {
         return DOWNLOAD_PERMISSION_NAME;
     }
-    if (inputPath.rfind(DOCUMENT_PATH) == 0) {
+    if (inputPath.substr(0, DOCUMENT_PATH.length()) == DOCUMENT_PATH) {
         return DOCUMENT_PERMISSION_NAME;
     }
     return std::string();

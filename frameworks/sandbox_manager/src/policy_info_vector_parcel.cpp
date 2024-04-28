@@ -37,7 +37,9 @@ bool PolicyInfoVectorParcel::Marshalling(Parcel &out) const
             return false;
         }
         policyInfoParcel->policyInfo = policy[i];
-        RELEASE_IF_FALSE(out.WriteParcelable(policyInfoParcel), policyInfoParcel);
+        if (!out.WriteParcelable(policyInfoParcel)) {
+            return false;
+        }
     }
 
     return true;
@@ -53,11 +55,13 @@ PolicyInfoVectorParcel* PolicyInfoVectorParcel::Unmarshalling(Parcel &in)
     const uint32_t POLICY_VECTOR_SIZE_LIMIT = 500;
     RELEASE_IF_FALSE(in.ReadUint32(vecSize), policyInfoVectorParcel);
     if (vecSize > POLICY_VECTOR_SIZE_LIMIT) {
+        delete policyInfoVectorParcel;
         return nullptr;
     }
     for (uint32_t i = 0; i < vecSize; i++) {
         sptr<PolicyInfoParcel> policyInfoParcel = in.ReadParcelable<PolicyInfoParcel>();
         if (policyInfoParcel == nullptr) {
+            delete policyInfoVectorParcel;
             return nullptr;
         }
         policyInfoVectorParcel->policyVector.emplace_back(policyInfoParcel->policyInfo);

@@ -28,10 +28,11 @@ bool PolicyInfoParcel::Marshalling(Parcel &out) const
 
 PolicyInfoParcel* PolicyInfoParcel::Unmarshalling(Parcel &in)
 {
-    auto* policyInfoParcel = new (std::nothrow) PolicyInfoParcel();
+    PolicyInfoParcel* policyInfoParcel = new (std::nothrow) PolicyInfoParcel();
     if (policyInfoParcel == nullptr) {
         return nullptr;
     }
+
     policyInfoParcel->policyInfo.path = in.ReadString();
     RELEASE_IF_FALSE(in.ReadUint64(policyInfoParcel->policyInfo.mode), policyInfoParcel);
     return policyInfoParcel;

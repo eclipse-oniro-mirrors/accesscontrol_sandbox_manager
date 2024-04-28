@@ -131,7 +131,7 @@ int32_t SandboxManagerDb::Modify(const DataType type, const GenericValues& modif
 int32_t SandboxManagerDb::Find(const DataType type, const GenericValues& conditions,
     const GenericValues& symbols, std::vector<GenericValues>& results)
 {
-    OHOS::Utils::UniqueWriteGuard<OHOS::Utils::RWLock> lock(this->rwLock_);
+    OHOS::Utils::UniqueReadGuard<OHOS::Utils::RWLock> lock(this->rwLock_);
     std::vector<std::string> searchColumns = conditions.GetAllKeys();
     std::string prepareSql = CreateSelectPrepareSqlCmd(type, searchColumns, symbols);
     auto statement = Prepare(prepareSql);

@@ -42,13 +42,14 @@ if (is_standard_system) {
       "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
       "${sandbox_manager_path}/services/common/database/include",
       "main/cpp/include/service",
+      "main/cpp/include/sensitive",
       "main/cpp/include/database",
     ]
 
     sources = [
       "main/cpp/src/database/policy_field_const.cpp",
       "main/cpp/src/database/sandbox_manager_db.cpp",
-      "main/cpp/src/service/package_uninstall_observer.cpp",
+      "main/cpp/src/sensitive/sandbox_manager_event_subscriber.cpp",
       "main/cpp/src/service/policy_info_manager.cpp",
       "main/cpp/src/service/sandbox_manager_service.cpp",
       "main/cpp/src/service/sandbox_manager_stub.cpp",

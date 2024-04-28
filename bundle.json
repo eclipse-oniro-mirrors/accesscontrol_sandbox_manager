@@ -1,5 +1,5 @@
 {
-  "name": "@openharmony/sandbox_manager",
+  "name": "@ohos/sandbox_manager",
   "description": "SandboxManager",
   "version": "0.0.0",
   "license": "Apache License 2.0",

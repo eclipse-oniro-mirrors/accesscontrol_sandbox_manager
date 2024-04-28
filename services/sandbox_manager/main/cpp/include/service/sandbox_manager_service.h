@@ -20,6 +20,7 @@
 #include <vector>
 #include "event_handler.h"
 #include "iremote_object.h"
+#include <mutex>
 #include "nocopyable.h"
 #include "sandbox_manager_stub.h"
 #include "singleton.h"
@@ -38,6 +39,7 @@ public:
     SandboxManagerService(int saId, bool runOnCreate);
     void OnStart() override;
     void OnStop() override;
+    void OnStart(const SystemAbilityOnDemandReason& startReason) override;
 
     int32_t PersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
     int32_t UnPersistPolicy(const std::vector<PolicyInfo> &policy, std::vector<uint32_t> &result) override;
@@ -56,8 +58,10 @@ public:
     
 private:
     bool Initialize();
-    void SubscribeUninstallEvent();
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+    bool StartByEventAction(const SystemAbilityOnDemandReason& startReason);
 
+    std::mutex stateMutex_;
     ServiceRunningState state_;
     std::shared_ptr<EventHandler> unloadHandler_ = nullptr;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,28 @@
  * limitations under the License.
  */
 
-#ifndef PACKAGE_UNINSTALL_OBSERVER_H
-#define PACKAGE_UNINSTALL_OBSERVER_H
+#ifndef SANDBOX_MANAGER_EVENT_SUBSCRIBER_H
+#define SANDBOX_MANAGER_EVENT_SUBSCRIBER_H
 #include "common_event_manager.h"
 #include "common_event_subscriber.h"
 #include "common_event_support.h"
-
 namespace OHOS {
 namespace AccessControl {
 namespace SandboxManager {
-class PkgUninstallObserver : public EventFwk::CommonEventSubscriber,
-    public std::enable_shared_from_this<PkgUninstallObserver> {
+class SandboxManagerCommonEventSubscriber : public OHOS::EventFwk::CommonEventSubscriber {
 public:
-    explicit PkgUninstallObserver(const EventFwk::CommonEventSubscribeInfo &subscribeInfo);
-    virtual ~PkgUninstallObserver() {};
-    virtual void OnReceiveEvent(const EventFwk::CommonEventData &data);
+    SandboxManagerCommonEventSubscriber(const OHOS::EventFwk::CommonEventSubscribeInfo& info)
+        : CommonEventSubscriber(info)
+    {}
+
+    ~SandboxManagerCommonEventSubscriber() = default;
+
+    static bool RegisterEvent();
+    static bool UnRegisterEvent();
+
+    void OnReceiveEvent(const OHOS::EventFwk::CommonEventData& data) override;
 };
 } // namespace SandboxManager
 } // namespace AccessControl
 } // namespace OHOS
-#endif // PACKAGE_UNINSTALL_OBSERVER_H
+#endif // SANDBOX_MANAGER_EVENT_SUBSCRIBER_H
