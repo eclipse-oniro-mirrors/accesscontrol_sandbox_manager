@@ -1,0 +1,83 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../../sandbox_manager.gni")
+
+ohos_prebuilt_etc("sandbox_manager_service.rc") {
+  source = "sandbox_manager_service.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "accesscontrol"
+  part_name = "sandbox_manager"
+}
+
+if (is_standard_system) {
+  ohos_shared_library("sandbox_manager_service") {
+    subsystem_name = "accesscontrol"
+    part_name = "sandbox_manager"
+    if (!use_clang_coverage) {
+      version_script = "sandbox_manager_service.map"
+    }
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
+    branch_protector_ret = "pac_ret"
+
+    include_dirs = [
+      "${sandbox_manager_path}/frameworks/sandbox_manager/include",
+      "${sandbox_manager_path}/frameworks/common/include",
+      "${sandbox_manager_path}/interfaces/innerkits/sandbox_manager/include",
+      "${sandbox_manager_path}/services/common/database/include",
+      "main/cpp/include/service",
+      "main/cpp/include/sensitive",
+      "main/cpp/include/database",
+    ]
+
+    sources = [
+      "main/cpp/src/database/policy_field_const.cpp",
+      "main/cpp/src/database/sandbox_manager_db.cpp",
+      "main/cpp/src/sensitive/sandbox_manager_event_subscriber.cpp",
+      "main/cpp/src/service/policy_info_manager.cpp",
+      "main/cpp/src/service/sandbox_manager_service.cpp",
+      "main/cpp/src/service/sandbox_manager_stub.cpp",
+    ]
+
+    cflags_cc = [ "-DHILOG_ENABLE" ]
+
+    configs = [ "${sandbox_manager_path}/config:coverage_flags" ]
+
+    deps = [
+      "${sandbox_manager_path}/frameworks/common:sandbox_manager_common_cxx",
+      "${sandbox_manager_path}/frameworks/sandbox_manager:sandbox_manager_communication_adapter_cxx",
+      "${sandbox_manager_path}/services/common:sandbox_manager_service_common",
+      "${sandbox_manager_path}/services/sandbox_manager:sandbox_manager_service.rc",
+    ]
+
+    external_deps = [
+      "ability_base:want",
+      "access_token:libaccesstoken_sdk",
+      "c_utils:utils",
+      "common_event_service:cesfwk_core",
+      "common_event_service:cesfwk_innerkits",
+      "eventhandler:libeventhandler",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "safwk:system_ability_fwk",
+      "samgr:samgr_proxy",
+      "sqlite:sqlite",
+    ]
+  }
+}
