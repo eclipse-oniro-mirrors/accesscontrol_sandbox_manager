@@ -49,6 +49,14 @@ private:
     int32_t AddVolumeUnmountTsColumn(NativeRdb::RdbStore &rdbStore) const;
     int32_t AddAppIndexColumn(NativeRdb::RdbStore &rdbStore) const;
     /**
+     * @brief Create (tokenId, lower(path)) expression index on the persisted policy table
+     * @details The index serves path-lookup queries (FindPersistedPaths) which reference
+     *          it via INDEXED BY; idempotent so both OnCreate and OnUpgrade can call it.
+     * @param rdbStore The RdbStore object
+     * @return int32_t Returns 0 on success, error code on failure
+     */
+    int32_t CreatePersistedPolicyTokenLowerPathIndex(NativeRdb::RdbStore &rdbStore) const;
+    /**
      * @brief Create bundle persistent policy table for storing bundle uninstall preserve mappings
      * @details This table stores the mapping information when an app is uninstalled with preserve enabled:
      *          - bundleName: bundle name of the uninstalled app

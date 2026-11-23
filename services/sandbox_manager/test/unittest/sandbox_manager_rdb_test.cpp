@@ -27,6 +27,7 @@
 #include "policy_info.h"
 #define private public
 #include "sandbox_manager_rdb.h"
+#include "sandbox_manager_rdb_open_callback.h"
 #undef private
 #include "sandbox_manager_log.h"
 
@@ -1556,6 +1557,145 @@ HWTEST_F(SandboxManagerRdbTest, SandboxManagerRdbTest_ModifyChangedRows_004, Tes
     EXPECT_EQ(SandboxManagerRdb::FAILURE, SandboxManagerRdb::GetInstance().Modify(
         SANDBOX_MANAGER_UGC_PERMISSION, emptyModify, condition, changedRows));
     ClearUgcTable();
+}
+
+/**
+ * @tc.name: SandboxManagerRdbTest_FindPersistedPaths_001
+ * @tc.desc: Empty path list returns success without touching the database
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerRdbTest, SandboxManagerRdbTest_FindPersistedPaths_001, TestSize.Level0)
+{
+    std::vector<GenericValues> dbResult;
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        1, {}, dbResult));
+    EXPECT_TRUE(dbResult.empty());
+}
+
+/**
+ * @tc.name: SandboxManagerRdbTest_FindPersistedPaths_003
+ * @tc.desc: Query matches rows by lower(path) IN regardless of stored case
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerRdbTest, SandboxManagerRdbTest_FindPersistedPaths_003, TestSize.Level0)
+{
+    GenericValues valueUpper;
+    valueUpper.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int64_t>(7));
+    valueUpper.Put(PolicyFiledConst::FIELD_PATH, "/USER_GRANT/A");
+    valueUpper.Put(PolicyFiledConst::FIELD_MODE, static_cast<int64_t>(0b01));
+    valueUpper.Put(PolicyFiledConst::FIELD_DEPTH, static_cast<int64_t>(2));
+    valueUpper.Put(PolicyFiledConst::FIELD_FLAG, static_cast<int64_t>(0));
+    GenericValues valueLower;
+    valueLower.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int64_t>(7));
+    valueLower.Put(PolicyFiledConst::FIELD_PATH, "/user_grant/b");
+    valueLower.Put(PolicyFiledConst::FIELD_MODE, static_cast<int64_t>(0b10));
+    valueLower.Put(PolicyFiledConst::FIELD_DEPTH, static_cast<int64_t>(2));
+    valueLower.Put(PolicyFiledConst::FIELD_FLAG, static_cast<int64_t>(0));
+    std::vector<GenericValues> values = {valueUpper, valueLower};
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().Add(
+        SANDBOX_MANAGER_PERSISTED_POLICY, values));
+
+    std::vector<GenericValues> dbResult;
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        7, {"/user_grant/a", "/USER_GRANT/B"}, dbResult));
+    EXPECT_EQ(2u, dbResult.size());
+    for (const auto &result : dbResult) {
+        EXPECT_EQ(7, result.GetInt(PolicyFiledConst::FIELD_TOKENID));
+    }
+
+    GenericValues conditions;
+    conditions.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int64_t>(7));
+    SandboxManagerRdb::GetInstance().Remove(SANDBOX_MANAGER_PERSISTED_POLICY, conditions);
+}
+
+/**
+ * @tc.name: SandboxManagerRdbTest_FindPersistedPaths_Chunking_001
+ * @tc.desc: More than MAX_PATHS_PER_QUERY paths split into multiple IN chunks
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerRdbTest, SandboxManagerRdbTest_FindPersistedPaths_Chunking_001, TestSize.Level0)
+{
+    // MAX_PATHS_PER_QUERY is 2000 in the implementation: 2001 paths force a second chunk.
+    constexpr uint32_t pathCount = 2001;
+    std::vector<std::string> paths;
+    paths.reserve(pathCount);
+    for (uint32_t i = 0; i < pathCount; ++i) {
+        paths.push_back("/chunk_query/" + std::to_string(i));
+    }
+
+    // one row in the first chunk, one at the boundary, one in the second chunk
+    std::vector<GenericValues> values;
+    for (uint32_t idx : {0u, 1999u, 2000u}) {
+        GenericValues value;
+        value.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int64_t>(9));
+        value.Put(PolicyFiledConst::FIELD_PATH, paths[idx]);
+        value.Put(PolicyFiledConst::FIELD_MODE, static_cast<int64_t>(0b01));
+        value.Put(PolicyFiledConst::FIELD_DEPTH, static_cast<int64_t>(2));
+        value.Put(PolicyFiledConst::FIELD_FLAG, static_cast<int64_t>(0));
+        values.push_back(value);
+    }
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().Add(
+        SANDBOX_MANAGER_PERSISTED_POLICY, values));
+
+    std::vector<GenericValues> dbResult;
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        9, paths, dbResult));
+    EXPECT_EQ(3u, dbResult.size());
+
+    GenericValues conditions;
+    conditions.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int64_t>(9));
+    SandboxManagerRdb::GetInstance().Remove(SANDBOX_MANAGER_PERSISTED_POLICY, conditions);
+}
+
+/**
+ * @tc.name: SandboxManagerRdbTest_FindPersistedPaths_IndexMissing_001
+ * @tc.desc: Query fails while the index is missing; recreated index restores query
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerRdbTest, SandboxManagerRdbTest_FindPersistedPaths_IndexMissing_001, TestSize.Level0)
+{
+    constexpr const char *indexSql =
+        "CREATE INDEX IF NOT EXISTS persisted_policy_token_lower_path_idx "
+        "ON persisted_policy_table (tokenId, lower(path))";
+    auto db = SandboxManagerRdb::GetInstance().GetRdb();
+    ASSERT_NE(nullptr, db);
+    EXPECT_EQ(NativeRdb::E_OK, db->ExecuteSql("DROP INDEX persisted_policy_token_lower_path_idx"));
+
+    // NativeRdb::QuerySql does not return nullptr on the prepare failure of INDEXED BY on a
+    // missing index; FindPersistedPaths must surface it as FAILURE instead of an empty match.
+    std::vector<GenericValues> dbResult;
+    EXPECT_EQ(SandboxManagerRdb::FAILURE, SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        1, {"/user_grant/a"}, dbResult));
+
+    EXPECT_EQ(NativeRdb::E_OK, db->ExecuteSql(indexSql));
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        1, {"/user_grant/a"}, dbResult));
+}
+
+/**
+ * @tc.name: SandboxManagerRdbTest_OnUpgradeVersionGates_001
+ * @tc.desc: OnUpgrade runs the v6/v7 blocks per (currentVersion, targetVersion) combination
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SandboxManagerRdbTest, SandboxManagerRdbTest_OnUpgradeVersionGates_001, TestSize.Level0)
+{
+    SandboxManagerRdbOpenCallback callback;
+    auto db = SandboxManagerRdb::GetInstance().GetRdb();
+    ASSERT_NE(nullptr, db);
+    // All DDL is idempotent (IF NOT EXISTS / column-exists check), so each combination is safe.
+    EXPECT_EQ(NativeRdb::E_OK, callback.OnUpgrade(*db, 5, 7)); // v6 and v7 blocks both run
+    EXPECT_EQ(NativeRdb::E_OK, callback.OnUpgrade(*db, 6, 7)); // v6 gate false, v7 block runs
+    EXPECT_EQ(NativeRdb::E_OK, callback.OnUpgrade(*db, 7, 7)); // both gates false
+    EXPECT_EQ(NativeRdb::E_OK, callback.OnUpgrade(*db, 5, 6)); // v7 gate false
+
+    std::vector<GenericValues> dbResult;
+    EXPECT_EQ(SandboxManagerRdb::SUCCESS, SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        1, {"/user_grant/a"}, dbResult));
 }
 } // SandboxManager
 } // AccessControl

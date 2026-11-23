@@ -51,21 +51,29 @@ public:
     void SetSensitive(const std::string &path);
     bool AddDeniedPaths(const std::vector<std::string> &paths);
     bool IsEmpty() const;
+    static std::vector<std::string> SplitPath(const std::string &path);
 private:
     inline static const uint64_t MODE_FILTER = 0b11111;
-    std::vector<std::string> SplitPath(const std::string &path);
+    struct MatchChain {
+        PolicyTrie *node;
+        std::string path;
+    };
+    struct MatchCandidate {
+        const std::string *key;
+        PolicyTrie *child;
+    };
+    // Extends every chain by one segment, forking one chain per stored case variant at
+    // case-insensitive levels.
+    void AdvanceMatchChains(const std::string &segment,
+        std::vector<MatchChain> &chains, std::vector<MatchChain> &next);
+    // Appends the children of this node whose key matches the segment: case-sensitive
+    // nodes contribute their exact child, case-insensitive nodes all stored variants.
+    void CollectMatchCandidates(const std::string &segment,
+        std::vector<MatchCandidate> &candidates) const;
     bool IsPolicyMatch(uint64_t referMode, uint64_t searchMode);
     bool CheckPathInternal(const std::string &path, uint64_t mode, bool checkMode = true);
     bool CheckPathInternalNew(const std::string &path, uint64_t mode, bool checkMode = true);
     void DeleteChildren();
-    struct SearchState {
-        PolicyTrie* node;
-        size_t currentIndex;
-        std::string currentPath;
-
-        SearchState(PolicyTrie* n, size_t idx, std::string path)
-            : node(n), currentIndex(idx), currentPath(path) {}
-    };
     static const std::unordered_map<std::string, int> DENIED_PATHS;
     std::unordered_map<std::string, PolicyTrie *> children_;
     bool isEndOfPath_ = false;

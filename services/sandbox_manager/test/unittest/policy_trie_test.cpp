@@ -13,10 +13,18 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
+#include <cstdint>
 #include <set>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <gtest/gtest.h>
 #include "sandbox_manager_log.h"
+#define private public
 #include "policy_trie.h"
+#undef private
 using namespace testing::ext;
 
 namespace OHOS {
@@ -859,6 +867,225 @@ HWTEST_F(PolicyTrieTest, PolicyTrieTestBoundaryAtAppdata, TestSize.Level0)
         "/storage/Users/currentUser/APPDATA/el2/could/com.example.FILEMANAGER/.thumbs", MODE_RW), false);
     EXPECT_EQ(trie.CheckPathNew(
         "/storage/Users/currentUser/appdata/el2/could/com.example.FILEMANAGER/.thumbs", MODE_RW), false);
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsSensitiveHit
+ * @tc.desc: AdvanceMatchChains follows the exact child of a case-sensitive node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsSensitiveHit, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.InsertPreservingCase("/storage/Users", MODE_RW);
+
+    std::vector<PolicyTrie::MatchChain> current = {PolicyTrie::MatchChain{&trie, std::string()}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("storage", current, next);
+    ASSERT_EQ(next.size(), 1);
+    EXPECT_EQ(next[0].path, "/storage");
+
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("Users", current, next);
+    ASSERT_EQ(next.size(), 1);
+    EXPECT_EQ(next[0].path, "/storage/Users");
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsSensitiveMiss
+ * @tc.desc: AdvanceMatchChains drops the chain when a case-sensitive node has no such child
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsSensitiveMiss, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.InsertPreservingCase("/storage/Users", MODE_RW);
+
+    std::vector<PolicyTrie::MatchChain> current = {PolicyTrie::MatchChain{&trie, std::string()}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("data", current, next);
+    EXPECT_EQ(next.size(), 0);
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsInsensitiveSingleVariant
+ * @tc.desc: AdvanceMatchChains folds the query segment at a case-insensitive node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsInsensitiveSingleVariant, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.SetInsensitive("/storage/Users");
+    trie.InsertPreservingCase("/storage/Users/Music", MODE_RW);
+
+    std::vector<PolicyTrie::MatchChain> current = {PolicyTrie::MatchChain{&trie, std::string()}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("storage", current, next);
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("Users", current, next);
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("MUSIC", current, next);
+    ASSERT_EQ(next.size(), 1);
+    EXPECT_EQ(next[0].path, "/storage/Users/Music");
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsInsensitiveMultipleVariants
+ * @tc.desc: AdvanceMatchChains forks one chain per stored case variant
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsInsensitiveMultipleVariants, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.SetInsensitive("/storage/Users");
+    trie.InsertPreservingCase("/storage/Users/Music", MODE_RW);
+    trie.InsertPreservingCase("/storage/Users/MUSIC", MODE_RW);
+
+    std::vector<PolicyTrie::MatchChain> current = {PolicyTrie::MatchChain{&trie, std::string()}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("storage", current, next);
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("Users", current, next);
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("music", current, next);
+    ASSERT_EQ(next.size(), 2);
+    std::set<std::string> paths;
+    paths.insert(next[0].path);
+    paths.insert(next[1].path);
+    EXPECT_TRUE(paths.count("/storage/Users/Music"));
+    EXPECT_TRUE(paths.count("/storage/Users/MUSIC"));
+    EXPECT_NE(next[0].node, next[1].node);
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsInsensitiveIndexMiss
+ * @tc.desc: AdvanceMatchChains drops the chain when the lowercase segment is absent from indexMap_
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsInsensitiveIndexMiss, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.SetInsensitive("/storage/Users");
+    trie.InsertPreservingCase("/storage/Users/Music", MODE_RW);
+
+    std::vector<PolicyTrie::MatchChain> current = {PolicyTrie::MatchChain{&trie, std::string()}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("storage", current, next);
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("Users", current, next);
+    current = std::move(next);
+    next.clear();
+    trie.AdvanceMatchChains("photos", current, next);
+    EXPECT_EQ(next.size(), 0);
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsMultipleChainsIsolation
+ * @tc.desc: AdvanceMatchChains processes each chain independently; only surviving chains advance
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsMultipleChainsIsolation, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.InsertPreservingCase("/a/x", MODE_RW);
+    trie.InsertPreservingCase("/b/y", MODE_RW);
+    PolicyTrie *nodeA = trie.children_.at("a");
+    PolicyTrie *nodeB = trie.children_.at("b");
+
+    std::vector<PolicyTrie::MatchChain> current = {
+        PolicyTrie::MatchChain{nodeA, "/a"}, PolicyTrie::MatchChain{nodeB, "/b"}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("x", current, next);
+    ASSERT_EQ(next.size(), 1);
+    EXPECT_EQ(next[0].path, "/a/x");
+    EXPECT_EQ(next[0].node, nodeA->children_.at("x"));
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestAdvanceMatchChainsStaleIndexEntrySkipped
+ * @tc.desc: AdvanceMatchChains skips an indexMap_ entry that has no matching child
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestAdvanceMatchChainsStaleIndexEntrySkipped, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.SetInsensitive("/storage/Users");
+    trie.InsertPreservingCase("/storage/Users/Music", MODE_RW);
+    PolicyTrie *usersNode = trie.children_.at("storage")->children_.at("Users");
+    usersNode->indexMap_["photo"].insert("Photo");
+
+    std::vector<PolicyTrie::MatchChain> current = {PolicyTrie::MatchChain{usersNode, "/storage/Users"}};
+    std::vector<PolicyTrie::MatchChain> next;
+    trie.AdvanceMatchChains("PHOTO", current, next);
+    EXPECT_EQ(next.size(), 0);
+
+    next.clear();
+    trie.AdvanceMatchChains("MUSIC", current, next);
+    ASSERT_EQ(next.size(), 1);
+    EXPECT_EQ(next[0].path, "/storage/Users/Music");
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestFindMatchingPathsModeMismatch
+ * @tc.desc: A full-depth chain whose stored mode differs is not collected
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestFindMatchingPathsModeMismatch, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.InsertPreservingCase("/storage/Users/Music", MODE_READ);
+
+    EXPECT_EQ(0u, trie.FindMatchingPaths("/storage/Users/Music", MODE_WRITE).size());
+    EXPECT_EQ(1u, trie.FindMatchingPaths("/storage/Users/Music", MODE_READ).size());
+
+    trie.Clear();
+}
+
+/**
+ * @tc.name: PolicyTrieTestFindMatchingPathsPrefixOfStored
+ * @tc.desc: A full-depth chain ending at a non-terminal node is not collected
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyTrieTest, PolicyTrieTestFindMatchingPathsPrefixOfStored, TestSize.Level0)
+{
+    PolicyTrie trie;
+    trie.InsertPreservingCase("/storage/Users/Music/album", MODE_READ);
+
+    // the query path is a strict prefix of the stored path: the chain reaches full
+    // depth at an intermediate node that is not an end of path
+    EXPECT_EQ(0u, trie.FindMatchingPaths("/storage/Users/Music", MODE_READ).size());
+    EXPECT_EQ(1u, trie.FindMatchingPaths("/storage/Users/Music/album", MODE_READ).size());
 
     trie.Clear();
 }

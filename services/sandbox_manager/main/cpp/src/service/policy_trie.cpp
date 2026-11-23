@@ -20,6 +20,7 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "policy_trie.h"
 #include "sandbox_manager_dfx_helper.h"
@@ -32,10 +33,6 @@ std::string ToLowerCase(const std::string &str)
     std::transform(result.begin(), result.end(), result.begin(),
                    [](unsigned char c) { return std::tolower(c); });
     return result;
-}
-std::string BuildPath(const std::string &basePath, const std::string &segment)
-{
-    return basePath.empty() ? "/" + segment : basePath + "/" + segment;
 }
 }
 
@@ -301,6 +298,50 @@ bool PolicyTrie::CheckPathNew(const std::string &path, uint64_t mode)
 {
     return CheckPathInternalNew(path, mode, true);
 }
+void PolicyTrie::CollectMatchCandidates(const std::string &segment,
+    std::vector<MatchCandidate> &candidates) const
+{
+    if (!caseInsensitive_) {
+        auto childIt = children_.find(segment);
+        if (childIt != children_.end()) {
+            candidates.push_back(MatchCandidate{&childIt->first, childIt->second});
+        }
+        return;
+    }
+
+    auto indexIt = indexMap_.find(ToLowerCase(segment));
+    if (indexIt == indexMap_.end()) {
+        return;
+    }
+    for (const std::string &storedKey : indexIt->second) {
+        auto childIt = children_.find(storedKey);
+        if (childIt != children_.end()) {
+            candidates.push_back(MatchCandidate{&storedKey, childIt->second});
+        }
+    }
+}
+
+void PolicyTrie::AdvanceMatchChains(const std::string &segment,
+    std::vector<MatchChain> &chains, std::vector<MatchChain> &next)
+{
+    std::vector<MatchCandidate> candidates;
+    for (MatchChain &chain : chains) {
+        candidates.clear();
+        chain.node->CollectMatchCandidates(segment, candidates);
+
+        // All but the last candidate copy the base path; the last one extends the chain
+        // path in place, so non-branching walks stay linear in the path length.
+        for (size_t i = 0; i + 1 < candidates.size(); ++i) {
+            next.push_back(MatchChain{candidates[i].child, chain.path + '/' + *candidates[i].key});
+        }
+        if (!candidates.empty()) {
+            chain.path += '/';
+            chain.path += *candidates.back().key;
+            next.push_back(MatchChain{candidates.back().child, std::move(chain.path)});
+        }
+    }
+}
+
 std::vector<std::string> PolicyTrie::FindMatchingPaths(const std::string &path, uint64_t mode)
 {
     std::vector<std::string> results;
@@ -310,46 +351,28 @@ std::vector<std::string> PolicyTrie::FindMatchingPaths(const std::string &path, 
         return results;
     }
 
-    std::vector<SearchState> searchStack;
-    searchStack.emplace_back(this, 0, "");
+    // Level-by-level walk (no recursion): chains advance one segment per level and only
+    // case-insensitive levels branch, so the chain count equals the stored case variants.
+    std::vector<MatchChain> current;
+    std::vector<MatchChain> next;
+    current.reserve(searchSegments.size() + 1);
+    next.reserve(searchSegments.size() + 1);
+    current.push_back(MatchChain{this, std::string()});
 
-    while (!searchStack.empty()) {
-        SearchState current = searchStack.back();
-        searchStack.pop_back();
-
-        PolicyTrie* currentNode = current.node;
-        size_t segmentIndex = current.currentIndex;
-        std::string reconstructedPath = current.currentPath;
-        bool iscaseInsensitive = currentNode->caseInsensitive_;
-
-        if (segmentIndex >= searchSegments.size()) {
-            if (currentNode->isEndOfPath_ && currentNode->modes_.count(mode) != 0) {
-                results.push_back(reconstructedPath);
-            }
-            continue;
+    for (const std::string &segment : searchSegments) {
+        next.clear();
+        AdvanceMatchChains(segment, current, next);
+        if (next.empty()) {
+            return results;
         }
-
-        std::string targetSegment = searchSegments[segmentIndex];
-        if (!iscaseInsensitive) {
-            if (currentNode->children_.find(targetSegment) != currentNode->children_.end()) {
-                std::string newPath = BuildPath(reconstructedPath, targetSegment);
-                searchStack.emplace_back(currentNode->children_[targetSegment], segmentIndex + 1, newPath);
-            }
-            continue;
-        }
-
-        if (currentNode->indexMap_.find(ToLowerCase(targetSegment)) == currentNode->indexMap_.end()) {
-            continue;
-        }
-
-        for (const std::string &storedKey: currentNode->indexMap_[ToLowerCase(targetSegment)]) {
-            std::string newPath = BuildPath(reconstructedPath, storedKey);
-            if (currentNode->children_.find(storedKey) != currentNode->children_.end()) {
-                searchStack.emplace_back(currentNode->children_[storedKey], segmentIndex + 1, newPath);
-            }
-        }
+        std::swap(current, next);
     }
 
+    for (MatchChain &chain : current) {
+        if (chain.node->isEndOfPath_ && chain.node->modes_.count(mode) != 0) {
+            results.push_back(std::move(chain.path));
+        }
+    }
     return results;
 }
 
