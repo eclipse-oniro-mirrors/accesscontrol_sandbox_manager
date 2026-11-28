@@ -30,9 +30,9 @@
 #include "policy_info_manager.h"
 #include "share_files.h"
 #include "persistent_preserve.h"
+#include "sandbox_manager_rdb.h"
 #undef private
 #include "sandbox_manager_const.h"
-#include "sandbox_manager_rdb.h"
 #include "sandbox_manager_log.h"
 #include "sandbox_manager_err_code.h"
 #include <sys/mount.h>
@@ -3749,6 +3749,40 @@ HWTEST_F(PolicyInfoManagerTest, ArrayOutOfBoundsTest001, TestSize.Level0)
     EXPECT_EQ(SandboxRetType::INVALID_MODE, result11[1]);
     EXPECT_EQ(SandboxRetType::OPERATE_SUCCESSFULLY, result11[2]);
     PolicyInfoManager::GetInstance().UnSetAllPolicyByToken(selfTokenId_);
+}
+
+/**
+ * @tc.name: PolicyInfoManagerTestMatchPolicyIndexMissing001
+ * @tc.desc: MatchPolicy fails while the index is missing; restored index heals
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PolicyInfoManagerTest, PolicyInfoManagerTestMatchPolicyIndexMissing001, TestSize.Level0)
+{
+    constexpr const char *indexSql =
+        "CREATE INDEX IF NOT EXISTS persisted_policy_token_lower_path_idx "
+        "ON persisted_policy_table (tokenId, lower(path))";
+    auto db = SandboxManagerRdb::GetInstance().GetRdb();
+    ASSERT_NE(nullptr, db);
+    ASSERT_EQ(NativeRdb::E_OK, db->ExecuteSql("DROP INDEX persisted_policy_token_lower_path_idx"));
+
+    PolicyInfo info;
+    info.path = "/storage/Users/currentUser/appdata/el2/base/com.ohos.dlpmanager/haps/entry/files/covdb";
+    info.mode = OperateMode::READ_MODE;
+    std::vector<PolicyInfo> policies = {info};
+    // FindPersistedPaths surfaces the prepare failure of INDEXED BY on the missing index,
+    // so MatchPolicy propagates SANDBOX_MANAGER_DB_ERR instead of an empty match.
+    std::vector<uint32_t> results;
+    EXPECT_EQ(SANDBOX_MANAGER_DB_ERR,
+        PolicyInfoManager::GetInstance().MatchPolicy(g_mockToken, policies, results));
+
+    // Restore the shared index no matter how the assertions above evaluated.
+    ASSERT_EQ(NativeRdb::E_OK, db->ExecuteSql(indexSql));
+    std::vector<uint32_t> resultsAfter;
+    EXPECT_EQ(SANDBOX_MANAGER_OK, PolicyInfoManager::GetInstance().MatchPolicy(
+        g_mockToken, policies, resultsAfter));
+    ASSERT_EQ(1u, resultsAfter.size());
+    EXPECT_EQ(static_cast<uint32_t>(SandboxRetType::POLICY_HAS_NOT_BEEN_PERSISTED), resultsAfter[0]);
 }
 } // SandboxManager
 } // AccessControl

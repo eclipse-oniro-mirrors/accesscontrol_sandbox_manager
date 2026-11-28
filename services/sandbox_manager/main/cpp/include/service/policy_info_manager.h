@@ -420,11 +420,29 @@ private:
 
     // Helper functions for MatchNormalPolicy optimization
     void InitTrieWithCaseSensitivity(PolicyTrie &trieTree);
-    void SetAllResultsAsNotPersisted(std::vector<uint32_t> &result);
 
     // Helper functions for policy operations (shared between MatchNormalPolicy and RemoveNormalPolicy)
-    int32_t BuildTrieForPolicyOperations(const uint32_t tokenId, PolicyTrie &trieTree, bool preserveCase);
-    int32_t BuildTrieForPolicyOperationsNew(const uint32_t tokenId, PolicyTrie &trieTree,  PolicyTrie &trieTreeNew);
+    // Query scope for BuildTrieForPolicyOperations:
+    // EXACT_PATHS   - rows equal to the input paths (consumed by FindMatchingPaths)
+    // PATH_PREFIXES - rows that are prefixes of the input paths (consumed by CheckPath)
+    enum class TrieQueryScope {
+        EXACT_PATHS,
+        PATH_PREFIXES,
+    };
+    // preserveCase keeps DB case in the trie so FindMatchingPaths returns paths identical
+    // to the stored rows - required when results feed DB conditions or MAC unset; with
+    // false, case-insensitive zones are stored folded and would come back lowercased,
+    // which is acceptable when only match booleans are consumed.
+    // Glue of QueryPolicyRows + BuildTrieFromRows.
+    int32_t BuildTrieForPolicyOperations(const uint32_t tokenId, PolicyTrie &trieTree,
+        TrieQueryScope scope, bool preserveCase, const std::vector<PolicyInfo> &policy);
+    // Queries the DB rows the trie walk needs (exact or prefix rows of the input paths)
+    // instead of every policy of the token.
+    int32_t QueryPolicyRows(const uint32_t tokenId, TrieQueryScope scope,
+        const std::vector<PolicyInfo> &policy, std::vector<GenericValues> &dbResults);
+    // Inserts DB rows into the trie; preserveCase semantics as above.
+    void BuildTrieFromRows(const std::vector<GenericValues> &dbResults, PolicyTrie &trieTree,
+        bool preserveCase);
     int32_t BuildTrieWithAllRecords(PolicyTrie &trieTree);
 
     int32_t GetMediaPolicyCommonWork(const uint32_t tokenId, const std::vector<PolicyInfo> &policy,
@@ -465,7 +483,7 @@ private:
      * @param result output result vector
      */
     void ProcessPolicyMatches(const std::vector<PolicyInfo> &policy, size_t policySize, uint32_t tokenId,
-        PolicyTrie &trieTree, PolicyTrie &trieTreeNew, std::vector<uint32_t> &result);
+        PolicyTrie &trieTree, std::vector<uint32_t> &result);
 
     /**
      * @brief Retrieve media-related policies for the given token ID

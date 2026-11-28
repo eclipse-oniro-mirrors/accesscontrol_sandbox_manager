@@ -16,6 +16,7 @@
 #include "sandbox_manager_rdb.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cinttypes>
 #include <mutex>
 #include <cstdint>
@@ -35,6 +36,21 @@ static constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {LOG_CORE,
 inline static const std::string DATABASE_NAME = "sandbox_manager.db";
 inline static const std::string DATABASE_PATH = "/data/service/el1/public/sandbox_manager/";
 inline static const std::string SANDBOX_MANAGER_SERVICE_NAME = "sandbox_manager_service";
+
+// SQLite lower() (ASCII-only without ICU) and std::tolower (C locale) fold the same bytes,
+// so lowercased bind values match the lower(path) index expression exactly.
+std::string ToLowerAscii(const std::string &str)
+{
+    std::string result = str;
+    std::transform(result.begin(), result.end(), result.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    return result;
+}
+
+// Conservative chunk size bounding SQL length and bound-argument memory per query;
+// 1 tokenId argument + MAX_PATHS_PER_QUERY path arguments stays far below the SQLite
+// host-parameter limit (SQLITE_MAX_VARIABLE_NUMBER = 32766 for the bundled 3.44).
+constexpr size_t MAX_PATHS_PER_QUERY = 2000;
 }
 
 const std::string SandboxManagerRdb::IGNORE = "ignore";
@@ -526,6 +542,77 @@ int32_t SandboxManagerRdb::FindByTokenIds(const DataType type, const std::vector
         results.emplace_back(value);
     }
 
+    ScheduleDbCleanup();
+    return SUCCESS;
+}
+
+int32_t SandboxManagerRdb::QueryPersistedPathChunk(uint32_t tokenId,
+    const std::vector<std::string> &paths, size_t offset, std::vector<GenericValues> &results)
+{
+    std::string tableName;
+    GetTableNameByType(SANDBOX_MANAGER_PERSISTED_POLICY, tableName);
+    std::shared_ptr<NativeRdb::RdbStore> db = GetRdb();
+    if (db == nullptr) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Db is null, open db first");
+        return FAILURE;
+    }
+    size_t pathCount = std::min(MAX_PATHS_PER_QUERY, paths.size() - offset);
+    std::vector<NativeRdb::ValueObject> bindArgs;
+    bindArgs.reserve(pathCount + 1); // 1 tokenId arg + 1 arg per path
+    std::string sql = "select * from " + tableName + " indexed by " +
+        PolicyFiledConst::PERSISTED_POLICY_TOKEN_LOWER_PATH_INDEX + " where " +
+        PolicyFiledConst::FIELD_TOKENID + " = ? and lower(" + PolicyFiledConst::FIELD_PATH + ") in (";
+    bindArgs.emplace_back(static_cast<int32_t>(tokenId));
+    for (size_t i = 0; i < pathCount; ++i) {
+        if (i > 0) {
+            sql += ",";
+        }
+        sql += "?";
+        bindArgs.emplace_back(ToLowerAscii(paths[offset + i]));
+    }
+    sql += ")";
+
+    OHOS::Utils::UniqueReadGuard<OHOS::Utils::RWLock> lock(rwLock_);
+    auto queryResultSet = db->QuerySql(sql, bindArgs);
+    if (queryResultSet == nullptr) {
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to find records from table %{public}s.", tableName.c_str());
+        return FAILURE;
+    }
+    while (true) {
+        int32_t rowRet = queryResultSet->GoToNextRow();
+        if (rowRet == NativeRdb::E_OK) {
+            GenericValues value;
+            ResultToGenericValues(queryResultSet, value);
+            if (!value.GetAllKeys().empty()) {
+                results.emplace_back(value);
+            }
+            continue;
+        }
+        if ((rowRet == NativeRdb::E_ROW_OUT_RANGE) || (rowRet == NativeRdb::E_NO_MORE_ROWS)) {
+            return SUCCESS;
+        }
+        // QuerySql does not return nullptr on prepare failure (e.g. missing INDEXED BY
+        // index); the error surfaces as a non-row-end GoToNextRow code.
+        SANDBOXMANAGER_LOG_ERROR(LABEL, "Query failed on table %{public}s, ret:%{public}d",
+            tableName.c_str(), rowRet);
+        return FAILURE;
+    }
+}
+
+int32_t SandboxManagerRdb::FindPersistedPaths(uint32_t tokenId,
+    const std::vector<std::string> &paths, std::vector<GenericValues> &results)
+{
+    if (paths.empty()) {
+        return SUCCESS;
+    }
+
+    for (size_t offset = 0; offset < paths.size(); offset += MAX_PATHS_PER_QUERY) {
+        int32_t ret = QueryPersistedPathChunk(tokenId, paths, offset, results);
+        if (ret != SUCCESS) {
+            return FAILURE;
+        }
+    }
+    
     ScheduleDbCleanup();
     return SUCCESS;
 }

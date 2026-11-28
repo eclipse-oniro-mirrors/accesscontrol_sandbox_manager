@@ -466,16 +466,6 @@ void PolicyInfoManager::InitTrieWithCaseSensitivity(PolicyTrie &trieTree)
     }
 }
 
-/**
- * @brief Handle empty database results - set all results as not persisted
- */
-void PolicyInfoManager::SetAllResultsAsNotPersisted(std::vector<uint32_t> &result)
-{
-    for (auto &value : result) {
-        value = SandboxRetType::POLICY_HAS_NOT_BEEN_PERSISTED;
-    }
-}
-
 int32_t PolicyInfoManager::MatchNormalPolicy(const uint32_t tokenId, const std::vector<PolicyInfo> &policy,
     std::vector<uint32_t> &result)
 {
@@ -488,31 +478,21 @@ int32_t PolicyInfoManager::MatchNormalPolicy(const uint32_t tokenId, const std::
 
     // Step 1: Build trie tree with database results for policy operations
     PolicyTrie trieTree;
-    PolicyTrie trieTreeNew;
-    // Set case-insensitive and case-sensitive paths
     InitTrieWithCaseSensitivity(trieTree);
-    trieTreeNew.SetInsensitive("/storage/Users/currentUser");
-    trieTreeNew.SetSensitive("/storage/Users/currentUser/appdata");
-    bool boolen = trieTreeNew.AddDeniedPaths(macAdapter_.GetBlockedInheritPaths());
-    if (boolen != true) {
+    if (!trieTree.AddDeniedPaths(macAdapter_.GetBlockedInheritPaths())) {
         LOGE_WITH_REPORT(LABEL, "AddDeniedPaths error");
         return SANDBOX_MANAGER_SERVICE_REMOTE_ERR;
     }
 
-    int32_t ret = BuildTrieForPolicyOperationsNew(tokenId, trieTree, trieTreeNew);
+    // Step 2: Build trie tree with the rows that are prefixes of the queried paths;
+    // CheckPathNew consumes match booleans only, so folded keys are fine
+    int32_t ret = BuildTrieForPolicyOperations(tokenId, trieTree, TrieQueryScope::PATH_PREFIXES, false, policy);
     if (ret != SANDBOX_MANAGER_OK) {
         return ret;
     }
 
-    // Step 2: Handle empty database results - check if trie has no nodes
-    if (trieTree.IsEmpty()) {
-        SANDBOXMANAGER_LOG_INFO(LABEL, "target:%{public}u has no policy in db", tokenId);
-        SetAllResultsAsNotPersisted(result);
-        return SANDBOX_MANAGER_OK;
-    }
-
     // Step 3: Check each input policy against the trie
-    ProcessPolicyMatches(policy, policySize, tokenId, trieTree, trieTreeNew, result);
+    ProcessPolicyMatches(policy, policySize, tokenId, trieTree, result);
 
     SANDBOXMANAGER_LOG_INFO(LABEL, "match policy target:%{public}u end", tokenId);
     return SANDBOX_MANAGER_OK;
@@ -546,25 +526,68 @@ void PolicyInfoManager::ValidatePolicyAtIndex(size_t i, const std::vector<Policy
     }
 }
 
-/**
- * @brief Build trie tree with database results for policy operations
- */
-int32_t PolicyInfoManager::BuildTrieForPolicyOperations(const uint32_t tokenId, PolicyTrie &trieTree, bool preserveCase)
+// All prefixes of the input paths
+static std::vector<std::string> CollectPrefixPaths(const std::vector<PolicyInfo> &policy)
 {
-    // Query all policies for this tokenId from database
-    GenericValues conditions;
-    GenericValues symbols;
-    conditions.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int32_t>(tokenId));
-    symbols.Put(PolicyFiledConst::FIELD_TOKENID, std::string("="));
+    std::set<std::string> prefixSet;
+    for (const PolicyInfo &item : policy) {
+        std::string prefix;
+        for (const std::string &segment : PolicyTrie::SplitPath(item.path)) {
+            prefix += "/";
+            prefix += segment;
+            prefixSet.insert(prefix);
+        }
+    }
+    return std::vector<std::string>(prefixSet.begin(), prefixSet.end());
+}
 
+// Exact-match set
+static std::vector<std::string> CollectExactPaths(const std::vector<PolicyInfo> &policy)
+{
+    std::set<std::string> pathSet;
+    for (const PolicyInfo &item : policy) {
+        pathSet.insert(item.path);
+    }
+    return std::vector<std::string>(pathSet.begin(), pathSet.end());
+}
+
+/**
+ * @brief Build trie tree with the database rows needed by the trie walk,
+ *        gluing the row query and the trie construction.
+ */
+int32_t PolicyInfoManager::BuildTrieForPolicyOperations(const uint32_t tokenId, PolicyTrie &trieTree,
+    TrieQueryScope scope, bool preserveCase, const std::vector<PolicyInfo> &policy)
+{
     std::vector<GenericValues> dbResults;
-    int32_t ret = RangeFind(conditions, symbols, dbResults);
+    int32_t ret = QueryPolicyRows(tokenId, scope, policy, dbResults);
     if (ret != SANDBOX_MANAGER_OK) {
-        LOGE_WITH_REPORT(LABEL, "Database operate error when building trie for policy operations");
         return ret;
     }
+    BuildTrieFromRows(dbResults, trieTree, preserveCase);
+    return SANDBOX_MANAGER_OK;
+}
 
-    // Insert paths from database into trie tree
+int32_t PolicyInfoManager::QueryPolicyRows(const uint32_t tokenId, TrieQueryScope scope,
+    const std::vector<PolicyInfo> &policy, std::vector<GenericValues> &dbResults)
+{
+    std::vector<std::string> queryPaths =
+        (scope == TrieQueryScope::EXACT_PATHS) ? CollectExactPaths(policy) : CollectPrefixPaths(policy);
+    if (queryPaths.empty()) {
+        return SANDBOX_MANAGER_OK;
+    }
+    int32_t ret = SandboxManagerRdb::GetInstance().FindPersistedPaths(
+        tokenId, queryPaths, dbResults);
+    if (ret != SandboxManagerRdb::SUCCESS) {
+        LOGE_WITH_REPORT(LABEL, "Database operate error when building trie for policy operations, "
+            "tokenId:%{public}u", tokenId);
+        return SANDBOX_MANAGER_DB_ERR;
+    }
+    return SANDBOX_MANAGER_OK;
+}
+
+void PolicyInfoManager::BuildTrieFromRows(const std::vector<GenericValues> &dbResults, PolicyTrie &trieTree,
+    bool preserveCase)
+{
     for (size_t i = 0; i < dbResults.size(); i++) {
         std::string currPath = dbResults[i].GetString(PolicyFiledConst::FIELD_PATH);
         uint32_t currMode = static_cast<uint32_t>(dbResults[i].GetInt(PolicyFiledConst::FIELD_MODE));
@@ -574,35 +597,6 @@ int32_t PolicyInfoManager::BuildTrieForPolicyOperations(const uint32_t tokenId, 
             trieTree.InsertPath(currPath, currMode);
         }
     }
-
-    return SANDBOX_MANAGER_OK;
-}
-
-int32_t PolicyInfoManager::BuildTrieForPolicyOperationsNew(const uint32_t tokenId, PolicyTrie &trieTree,
-    PolicyTrie &trieTreeNew)
-{
-    // Query all policies for this tokenId from database
-    GenericValues conditions;
-    GenericValues symbols;
-    conditions.Put(PolicyFiledConst::FIELD_TOKENID, static_cast<int32_t>(tokenId));
-    symbols.Put(PolicyFiledConst::FIELD_TOKENID, std::string("="));
-
-    std::vector<GenericValues> dbResults;
-    int32_t ret = RangeFind(conditions, symbols, dbResults);
-    if (ret != SANDBOX_MANAGER_OK) {
-        LOGE_WITH_REPORT(LABEL, "Database operate error when building trie for policy operations");
-        return ret;
-    }
-
-    // Insert paths from database into trie tree
-    for (size_t i = 0; i < dbResults.size(); i++) {
-        std::string currPath = dbResults[i].GetString(PolicyFiledConst::FIELD_PATH);
-        uint32_t currMode = static_cast<uint32_t>(dbResults[i].GetInt(PolicyFiledConst::FIELD_MODE));
-        trieTree.InsertPath(currPath, currMode);
-        trieTreeNew.InsertPath(currPath, currMode);
-    }
-
-    return SANDBOX_MANAGER_OK;
 }
 
 /**
@@ -622,12 +616,7 @@ int32_t PolicyInfoManager::BuildTrieWithAllRecords(PolicyTrie &trieTree)
         return SANDBOX_MANAGER_DB_ERR;
     }
 
-    // Insert paths from database into trie tree
-    for (size_t i = 0; i < dbResults.size(); i++) {
-        std::string currPath = dbResults[i].GetString(PolicyFiledConst::FIELD_PATH);
-        uint32_t currMode = static_cast<uint32_t>(dbResults[i].GetInt(PolicyFiledConst::FIELD_MODE));
-        trieTree.InsertPreservingCase(currPath, currMode);
-    }
+    BuildTrieFromRows(dbResults, trieTree, true);
 
     return SANDBOX_MANAGER_OK;
 }
@@ -636,7 +625,7 @@ int32_t PolicyInfoManager::BuildTrieWithAllRecords(PolicyTrie &trieTree)
  * @brief Process policy matches against trie tree
  */
 void PolicyInfoManager::ProcessPolicyMatches(const std::vector<PolicyInfo> &policy, size_t policySize,
-    uint32_t tokenId, PolicyTrie &trieTree, PolicyTrie &trieTreeNew, std::vector<uint32_t> &result)
+    uint32_t tokenId, PolicyTrie &trieTree, std::vector<uint32_t> &result)
 {
     for (size_t i = 0; i < policySize; i++) {
         int32_t checkPolicyRet = CheckPolicyValidity(policy[i], SetPolicyType::NORMAL_POLICY);
@@ -645,19 +634,8 @@ void PolicyInfoManager::ProcessPolicyMatches(const std::vector<PolicyInfo> &poli
             continue;
         }
 
-        bool retFlag = trieTree.CheckPath(policy[i].path, policy[i].mode);
-        bool retFlagNew = trieTreeNew.CheckPathNew(policy[i].path, policy[i].mode);
-        if (retFlag != retFlagNew) {
-            std::string maskedPath = SandboxManagerLog::MaskRealPath(policy[i].path);
-            std::string error = "Check blocked path: " + maskedPath + " ret:"
-                + std::to_string(retFlag) + " retNew:" + std::to_string(retFlagNew)
-                + " mode:" + std::to_string(policy[i].mode);
-            SANDBOXMANAGER_LOG_ERROR(LABEL, "CheckPath mismatch path: %{public}s mode: %{public}u "
-                "retFlag: %{public}d retFlagNew: %{public}d",
-                maskedPath.c_str(), static_cast<uint32_t>(policy[i].mode), retFlag, retFlagNew);
-            OHOS::AccessControl::SandboxManager::SandboxManagerDfxHelper::WriteEmergencyReportData(error, tokenId);
-        }
-        if (retFlagNew) {
+        bool retFlag = trieTree.CheckPathNew(policy[i].path, policy[i].mode);
+        if (retFlag) {
             result[i] = SandboxRetType::OPERATE_SUCCESSFULLY;
         } else {
             std::string maskPath = SandboxManagerLog::MaskRealPath(policy[i].path);
@@ -681,7 +659,8 @@ int32_t PolicyInfoManager::RemoveNormalPolicy(const uint32_t tokenId, const std:
 
     PolicyTrie trieTree;
     InitTrieWithCaseSensitivity(trieTree);
-    int32_t ret = BuildTrieForPolicyOperations(tokenId, trieTree, true);
+    // matched paths feed DB remove conditions and MAC unset, so they must keep DB case
+    int32_t ret = BuildTrieForPolicyOperations(tokenId, trieTree, TrieQueryScope::EXACT_PATHS, true, policy);
     if (ret != SANDBOX_MANAGER_OK) {
         return ret;
     }

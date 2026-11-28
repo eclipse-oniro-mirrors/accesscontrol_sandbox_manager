@@ -38,22 +38,27 @@ int32_t SandboxManagerRdbOpenCallback::OnCreate(NativeRdb::RdbStore &rdbStore)
     SANDBOXMANAGER_LOG_INFO(LABEL, "DB OnCreate");
     int32_t res = CreatePersistedPolicyTable(rdbStore, PERSISTED_POLICY_TABLE);
     if (res != NativeRdb::E_OK) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to create table PERSISTED_POLICY_TABLE");
+        LOGE_WITH_REPORT(LABEL, "Failed to create table PERSISTED_POLICY_TABLE");
         return res;
     }
     res = CreateBundlePersistentPolicyTable(rdbStore, BUNDLE_PERSISTENT_POLICY_TABLE);
     if (res != NativeRdb::E_OK) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to create table BUNDLE_PERSISTENT_POLICY_TABLE");
+        LOGE_WITH_REPORT(LABEL, "Failed to create table BUNDLE_PERSISTENT_POLICY_TABLE");
         return res;
     }
     res = CreateSharedFileInfoTable(rdbStore, SHARED_FILE_INFO_TABLE);
     if (res != NativeRdb::E_OK) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to create table SHARED_FILE_INFO_TABLE");
+        LOGE_WITH_REPORT(LABEL, "Failed to create table SHARED_FILE_INFO_TABLE");
         return res;
     }
     res = CreateUgcPermissionTable(rdbStore, UGC_PERMISSION_TABLE);
     if (res != NativeRdb::E_OK) {
-        SANDBOXMANAGER_LOG_ERROR(LABEL, "Failed to create table UGC_PERMISSION_TABLE");
+        LOGE_WITH_REPORT(LABEL, "Failed to create table UGC_PERMISSION_TABLE");
+        return res;
+    }
+    res = CreatePersistedPolicyTokenLowerPathIndex(rdbStore);
+    if (res != NativeRdb::E_OK) {
+        LOGE_WITH_REPORT(LABEL, "Failed to create token lower path index");
         return res;
     }
     // Restore if back_db exist
@@ -62,7 +67,7 @@ int32_t SandboxManagerRdbOpenCallback::OnCreate(NativeRdb::RdbStore &rdbStore)
         SANDBOXMANAGER_LOG_INFO(LABEL, "Backup db exist, need to restore");
         int32_t restoreRet = rdbStore.Restore(std::string(""), {});
         if (restoreRet != NativeRdb::E_OK) {
-            SANDBOXMANAGER_LOG_ERROR(LABEL, "Rdb restore failed ret:%{public}d", restoreRet);
+            LOGE_WITH_REPORT(LABEL, "Rdb restore failed ret:%{public}d", restoreRet);
         }
     }
     return NativeRdb::E_OK;
@@ -117,6 +122,15 @@ int32_t SandboxManagerRdbOpenCallback::OnUpgrade(
         }
         SANDBOXMANAGER_LOG_INFO(LABEL, "Successfully upgraded database to version 6");
     }
+    // Upgrade from version < 7 to version 7: Add (tokenId, lower(path)) index on persisted_policy_table
+    if (currentVersion < 7 && targetVersion >= 7) {
+        int32_t res = CreatePersistedPolicyTokenLowerPathIndex(rdbStore);
+        if (res != NativeRdb::E_OK) {
+            LOGE_WITH_REPORT(LABEL, "Failed to create token lower path index during upgrade");
+            return res;
+        }
+        SANDBOXMANAGER_LOG_INFO(LABEL, "Successfully upgraded database to version 7");
+    }
 
     return NativeRdb::E_OK;
 }
@@ -146,6 +160,21 @@ int32_t SandboxManagerRdbOpenCallback::CreatePersistedPolicyTable(NativeRdb::Rdb
         .append(PolicyFiledConst::FIELD_PATH)
         .append(",")
         .append(PolicyFiledConst::FIELD_MODE)
+        .append("))");
+    return rdbStore.ExecuteSql(sql);
+}
+
+int32_t SandboxManagerRdbOpenCallback::CreatePersistedPolicyTokenLowerPathIndex(
+    NativeRdb::RdbStore &rdbStore) const
+{
+    std::string sql = "create index if not exists ";
+    sql.append(PolicyFiledConst::PERSISTED_POLICY_TOKEN_LOWER_PATH_INDEX)
+        .append(" on ")
+        .append(PERSISTED_POLICY_TABLE)
+        .append(" (")
+        .append(PolicyFiledConst::FIELD_TOKENID)
+        .append(", lower(")
+        .append(PolicyFiledConst::FIELD_PATH)
         .append("))");
     return rdbStore.ExecuteSql(sql);
 }

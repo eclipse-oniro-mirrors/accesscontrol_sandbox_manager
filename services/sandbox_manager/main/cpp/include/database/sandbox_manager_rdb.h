@@ -61,6 +61,13 @@ public:
     int32_t FindByTokenIds(const DataType type, const std::vector<uint32_t> &tokenIds,
         std::vector<GenericValues> &results);
 
+    // Query persisted_policy_table rows of the given token whose lower(path) equals one of
+    // the input paths (paths are lowercased at bind time, matching the index expression).
+    // The query references PERSISTED_POLICY_TOKEN_LOWER_PATH_INDEX via INDEXED BY; a missing
+    // index (or any other prepare failure) is reported as FAILURE, not as an empty result.
+    int32_t FindPersistedPaths(uint32_t tokenId, const std::vector<std::string> &paths,
+        std::vector<GenericValues> &results);
+
     int32_t GetRecordCount(const DataType type, int32_t &count);
 
     int32_t GetTokenIdWithMostRecords(const DataType type, uint32_t &tokenId, uint32_t &count);
@@ -73,6 +80,8 @@ private:
     std::shared_ptr<NativeRdb::RdbStore> GetRdb();
     int32_t OpenDatabaseInternal();    // caller must hold dbLock_
     void InitEventHandlerInternal();   // caller must hold dbLock_
+    int32_t QueryPersistedPathChunk(uint32_t tokenId, const std::vector<std::string> &paths,
+        size_t offset, std::vector<GenericValues> &results);
     void CleanupDbInternal();
     void ScheduleDbCleanup();
     void DbOperateFailure(const std::shared_ptr<NativeRdb::RdbStore> &db, const std::string& tableName, int32_t res);
@@ -82,7 +91,7 @@ private:
     std::shared_ptr<NativeRdb::RdbStore> db_ = nullptr;
     std::mutex dbLock_;
     OHOS::Utils::RWLock rwLock_; // Used to ensure serialization of write operations
-    static const int DATABASE_VERSION = 6;
+    static const int DATABASE_VERSION = 7;
     
     std::shared_ptr<AppExecFwk::EventHandler> eventHandler_ = nullptr;
     int64_t dbCleanupDelay_ = 180000; // 180 seconds in milliseconds
